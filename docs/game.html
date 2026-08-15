@@ -7,22 +7,22 @@
     <style>
         body { margin: 0; padding: 0; background: #111; color: #fff; font-family: system-ui, sans-serif; }
         #game-container { width: 100%; max-width: 800px; margin: 0 auto; aspect-ratio: 4/3; background: #000; }
+        #game { width: 100%; height: 100%; }
         .error { color: #ff5555; padding: 20px; text-align: center; }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <div class="error">Carregando emulador...</div>
+        <div id="game">Carregando emulador...</div>
     </div>
 
     <script>
         (function() {
             const params = new URLSearchParams(window.location.search);
             const romUrl = params.get('rom');
-            const container = document.getElementById('game-container');
-
+            
             if (!romUrl) {
-                container.innerHTML = '<div class="error">Parâmetro ?rom= faltando</div>';
+                document.getElementById('game').innerHTML = '<div class="error">Parâmetro ?rom= faltando</div>';
                 return;
             }
 
@@ -40,7 +40,12 @@
             };
             const core = coreMap[system] || 'gb';
 
-            container.innerHTML = '<div id="game"></div>';
+            window.EJS_player = '#game';
+            window.EJS_gameUrl = romUrl;
+            window.EJS_core = core;
+            window.EJS_onGameStart = function() {
+                console.log('Emulador iniciado');
+            };
 
             const script = document.createElement('script');
             script.src = 'https://www.retrogames.cc/bower_components/jquery/dist/jquery.js';
@@ -48,16 +53,15 @@
                 const emulatorScript = document.createElement('script');
                 emulatorScript.src = 'https://www.emulatorjs.com/loader.js';
                 emulatorScript.onload = function() {
-                    if (typeof EJS_player !== 'undefined') {
-                        EJS_player = '#game';
-                        EJS_gameUrl = romUrl;
-                        EJS_core = core;
-                        EJS_onGameStart = function() {
-                            console.log('Emulador iniciado');
-                        };
-                    }
+                    console.log('EmulatorJS carregado');
+                };
+                emulatorScript.onerror = function() {
+                    document.getElementById('game').innerHTML = '<div class="error">Erro ao carregar EmulatorJS</div>';
                 };
                 document.body.appendChild(emulatorScript);
+            };
+            script.onerror = function() {
+                document.getElementById('game').innerHTML = '<div class="error">Erro ao carregar jQuery</div>';
             };
             document.body.appendChild(script);
         })();
