@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFC Emulator</title>
+    <title>Pokemon Crystal</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: system-ui, sans-serif; }
         #game-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; }
         #game { width: 100%; height: 100%; }
-        #game iframe { width: 100%; height: 100%; border: none; }
+        #game iframe, #game canvas { width: 100% !important; height: 100% !important; max-width: 100%; max-height: 100%; object-fit: contain; }
         #ui { position: fixed; top: 10px; left: 10px; right: 10px; display: flex; gap: 10px; justify-content: center; z-index: 100; pointer-events: none; }
         #ui > * { pointer-events: auto; }
         .btn { background: rgba(0,0,0,0.7); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; backdrop-filter: blur(10px); }
@@ -48,13 +48,17 @@
     </div>
 
     <script>
-        const romUrl = 'https://raw.githubusercontent.com/derekcrato/nfcgames/main/Crystal%20Version.GBC';
+        const romUrl = '/roms/crystal-version.gbc';
         const saveKey = 'nfc_save_crystal_gbc';
 
         window.EJS_player = '#game';
         window.EJS_core = 'gb';
         window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
         window.EJS_gameUrl = romUrl;
+        window.EJS_biosUrl = '';
+        window.EJS_saveStateURL = '';
+        window.EJS_loadStateURL = '';
+        window.EJS_saveStateName = '';
     </script>
 
     <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
@@ -79,11 +83,14 @@
             }
 
             function getGame() {
-                const iframe = document.querySelector('#game iframe');
-                if (iframe && iframe.contentWindow) {
-                    return iframe.contentWindow;
+                if (window.EJS && window.EJS.game) {
+                    return window.EJS.game;
                 }
-                return window;
+                const iframe = document.querySelector('#game iframe');
+                if (iframe && iframe.contentWindow && iframe.contentWindow.EJS) {
+                    return iframe.contentWindow.EJS.game;
+                }
+                return null;
             }
 
             async function renderSlots(mode) {
@@ -138,19 +145,23 @@
                 });
             }
 
-            function saveToSlot(slot) {
+            async function saveToSlot(slot) {
                 try {
-                    const gameWin = getGame();
-                    let state = null;
+                    const game = getGame();
+                    if (!game) {
+                        alert('Emulador nao iniciado. Aguarde o jogo carregar.');
+                        return;
+                    }
 
-                    if (gameWin.EJS && gameWin.EJS.game && gameWin.EJS.game.exportState) {
-                        state = gameWin.EJS.game.exportState();
-                    } else if (gameWin.EJS_players && gameWin.EJS_players[0]) {
-                        state = gameWin.EJS_players[0].exportState();
+                    let state = null;
+                    if (game.exportState) {
+                        state = game.exportState();
+                    } else if (game.game && game.game.exportState) {
+                        state = game.game.exportState();
                     }
 
                     if (!state) {
-                        alert('Nao foi possivel exportar o save. Tente novamente.');
+                        alert('Nao foi possivel exportar o save state.');
                         return;
                     }
 
@@ -168,19 +179,24 @@
                 }
             }
 
-            function loadFromSlot(slot) {
+            async function loadFromSlot(slot) {
                 const saved = localStorage.getItem(`${saveKey}_slot_${slot}`);
                 if (!saved) return alert('Slot vazio');
 
                 try {
                     const data = JSON.parse(saved);
-                    const gameWin = getGame();
+                    const game = getGame();
+                    if (!game) {
+                        alert('Emulador nao iniciado.');
+                        return;
+                    }
+
                     const state = new Uint8Array(data.state);
 
-                    if (gameWin.EJS && gameWin.EJS.game && gameWin.EJS.game.loadState) {
-                        gameWin.EJS.game.loadState(state);
-                    } else if (gameWin.EJS_players && gameWin.EJS_players[0]) {
-                        gameWin.EJS_players[0].loadState(state);
+                    if (game.loadState) {
+                        await game.loadState(state);
+                    } else if (game.game && game.game.loadState) {
+                        await game.game.loadState(state);
                     }
 
                     alert('Save carregado!');
@@ -196,6 +212,10 @@
                 localStorage.removeItem(`${saveKey}_slot_${slot}`);
                 renderSlots('save');
             }
+
+            window.NFC_save = saveToSlot;
+            window.NFC_load = loadFromSlot;
+            window.NFC_delete = deleteSlot;
         })();
     </script>
 </body>
