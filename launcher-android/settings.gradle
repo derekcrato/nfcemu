@@ -1,2 +1,2 @@
-rootProject.name = "NFC Launcher"
+rootProject.name = 'NFCLauncher'
 include ':app'
