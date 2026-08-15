@@ -121,5 +121,6 @@ https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/nes/Super%20Mario%
 
 - `roms/` deve ser preenchido localmente e nao e versionado
 - `dist/games.json` e gerado automaticamente a partir de `roms/`
-- Launchers e packager estao prontos para build/teste
-- CI/CD precisa de ajustes para nao mexer em `roms/`
+- Launchers Android/iOS prontos para build/teste
+- Packager standalone funcional para APK/IPA
+- CI/CD ajustado para nao depender de `roms/**`
