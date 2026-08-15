@@ -82,11 +82,13 @@ class NFCManager: ObservableObject {
     }
 
     private func extractGameId(from url: String) -> String? {
-        let parts = url.split(separator: "/", maxSplits: 6)
-        guard parts.count >= 6 else { return nil }
-        let system = String(parts[4])
-        let name = String(parts[5])
-        let base = name.split(separator: ".").first.map(String.init) ?? name
+        guard let path = URL(string: url)?.path else { return nil }
+        let trimmed = path.replacingOccurrences(of: "^/roms/", with: "", options: .regularExpression)
+        let components = trimmed.split(separator: "/", maxSplits: 1)
+        guard components.count == 2 else { return nil }
+        let system = String(components[0])
+        let filename = String(components[1])
+        let base = filename.split(separator: ".").first.map(String.init) ?? filename
         return system + "-" + base.replacingOccurrences(of: " ", with: "_")
     }
 
