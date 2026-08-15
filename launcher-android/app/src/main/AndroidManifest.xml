@@ -25,8 +25,8 @@
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="https"
-                      android:host="raw.githubusercontent.com"
-                      android:pathPrefix="/derekcrato/nfcemu/main/roms/" />
+                      android:host="derekcrato.github.io"
+                      android:pathPrefix="/nfcemu/" />
             </intent-filter>
 
             <intent-filter>
