@@ -1,6 +1,17 @@
 import SwiftUI
 import CoreNFC
 
+extension URL {
+    var queryParameters: [String: String]? {
+        guard let components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else { return nil }
+        return Dictionary(uniqueKeysWithValues: queryItems.compactMap { item in
+            guard let value = item.value else { return nil }
+            return (item.name, value)
+        })
+    }
+}
+
 @main
 struct NFCLauncherApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -23,6 +34,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
         NFCManager.shared.handleUserActivity(userActivity)
         return true
+    }
+
+    func application(_ app: UIApplication, open url: URL,
+                     options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        guard url.scheme == "com.nfc.launcher" else { return false }
+        if let game = url.queryParameters?["game"] {
+            NFCManager.shared.launchGame(gameId: game)
+            return true
+        }
+        return false
     }
 }
 
