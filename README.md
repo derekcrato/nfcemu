@@ -62,6 +62,19 @@ python3 packager/build_standalone.py ios
 
 Nota: o build standalone requer cores do RetroArch baixados em `/tmp/ra-cores` ou no diretorio definido por `RETROARCH_CORES_DIR`.
 
+Para baixar os cores manualmente:
+```bash
+mkdir -p /tmp/ra-cores
+cd /tmp/ra-cores
+curl -L -o mgba_libretro_android.so.zip https://buildbot.libretro.com/nightly/android/latest/mgba_libretro_android.so.zip
+curl -L -o gambatte_libretro_android.so.zip https://buildbot.libretro.com/nightly/android/latest/gambatte_libretro_android.so.zip
+curl -L -o genesis_plus_gx_libretro_android.so.zip https://buildbot.libretro.com/nightly/android/latest/genesis_plus_gx_libretro_android.so.zip
+curl -L -o fceumm_libretro_android.so.zip https://buildbot.libretro.com/nightly/android/latest/fceumm_libretro_android.so.zip
+curl -L -o snes9x_libretro_android.so.zip https://buildbot.libretro.com/nightly/android/latest/snes9x_libretro_android.so.zip
+curl -L -o mednafen_psx_libretro_android.so.zip https://buildbot.libretro.com/nightly/android/latest/mednafen_psx_libretro_android.so.zip
+unzip \*.zip -d /tmp/ra-cores
+```
+
 ### GitHub Actions
 
 O CI automatico faz:
