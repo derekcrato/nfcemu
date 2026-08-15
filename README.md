@@ -60,6 +60,8 @@ python3 packager/build_standalone.py android
 python3 packager/build_standalone.py ios
 ```
 
+Nota: o build standalone requer cores do RetroArch baixados em `/tmp/ra-cores` ou no diretorio definido por `RETROARCH_CORES_DIR`.
+
 ### GitHub Actions
 
 O CI automatico faz:
