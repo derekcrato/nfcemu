@@ -7,7 +7,7 @@
     "rom": "roms/gba/Pokemon Crystal advanced Redux.gba",
     "icon": "icons/gba-Pokemon_Crystal_advanced_Redux.png",
     "bundle": "com.nfc.game.gba-pokemon_crystal_advanced_redux",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/gba/Pokemon Crystal advanced Redux.gba"
+    "url": "https://derekcrato.github.io/nfcemu/?game=gba-Pokemon_Crystal_advanced_Redux"
   },
   "gba-Pokemon_GS_Chronicles": {
     "id": "gba-Pokemon_GS_Chronicles",
@@ -17,7 +17,7 @@
     "rom": "roms/gba/Pokemon GS Chronicles.gba",
     "icon": "icons/gba-Pokemon_GS_Chronicles.png",
     "bundle": "com.nfc.game.gba-pokemon_gs_chronicles",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/gba/Pokemon GS Chronicles.gba"
+    "url": "https://derekcrato.github.io/nfcemu/?game=gba-Pokemon_GS_Chronicles"
   },
   "gbx-Crystal_Version": {
     "id": "gbx-Crystal_Version",
@@ -27,7 +27,7 @@
     "rom": "roms/gbx/Crystal Version.GBC",
     "icon": "icons/gbx-Crystal_Version.png",
     "bundle": "com.nfc.game.gbx-crystal_version",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/gbx/Crystal Version.GBC"
+    "url": "https://derekcrato.github.io/nfcemu/?game=gbx-Crystal_Version"
   },
   "gbx-Pokemon_vermelho": {
     "id": "gbx-Pokemon_vermelho",
@@ -37,7 +37,7 @@
     "rom": "roms/gbx/Pokemon vermelho.gb",
     "icon": "icons/gbx-Pokemon_vermelho.png",
     "bundle": "com.nfc.game.gbx-pokemon_vermelho",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/gbx/Pokemon vermelho.gb"
+    "url": "https://derekcrato.github.io/nfcemu/?game=gbx-Pokemon_vermelho"
   },
   "gbx-Pokemon_Yellow": {
     "id": "gbx-Pokemon_Yellow",
@@ -47,7 +47,7 @@
     "rom": "roms/gbx/Pokemon Yellow.gbc",
     "icon": "icons/gbx-Pokemon_Yellow.png",
     "bundle": "com.nfc.game.gbx-pokemon_yellow",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/gbx/Pokemon Yellow.gbc"
+    "url": "https://derekcrato.github.io/nfcemu/?game=gbx-Pokemon_Yellow"
   },
   "md-Michael_Jackson_Moonwalker": {
     "id": "md-Michael_Jackson_Moonwalker",
@@ -57,7 +57,7 @@
     "rom": "roms/md/Michael Jackson Moonwalker.bin",
     "icon": "icons/md-Michael_Jackson_Moonwalker.png",
     "bundle": "com.nfc.game.md-michael_jackson_moonwalker",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/md/Michael Jackson Moonwalker.bin"
+    "url": "https://derekcrato.github.io/nfcemu/?game=md-Michael_Jackson_Moonwalker"
   },
   "ms-Alex_Kidd_in_Miracle_World": {
     "id": "ms-Alex_Kidd_in_Miracle_World",
@@ -67,7 +67,7 @@
     "rom": "roms/ms/Alex Kidd in Miracle World.sms",
     "icon": "icons/ms-Alex_Kidd_in_Miracle_World.png",
     "bundle": "com.nfc.game.ms-alex_kidd_in_miracle_world",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/ms/Alex Kidd in Miracle World.sms"
+    "url": "https://derekcrato.github.io/nfcemu/?game=ms-Alex_Kidd_in_Miracle_World"
   },
   "ms-Psycho_Fox": {
     "id": "ms-Psycho_Fox",
@@ -77,7 +77,7 @@
     "rom": "roms/ms/Psycho Fox.sms",
     "icon": "icons/ms-Psycho_Fox.png",
     "bundle": "com.nfc.game.ms-psycho_fox",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/ms/Psycho Fox.sms"
+    "url": "https://derekcrato.github.io/nfcemu/?game=ms-Psycho_Fox"
   },
   "ms-Sapo_Xule_vs._Os_Invasores_do_Brejo": {
     "id": "ms-Sapo_Xule_vs._Os_Invasores_do_Brejo",
@@ -87,7 +87,7 @@
     "rom": "roms/ms/Sapo Xule vs. Os Invasores do Brejo.bin",
     "icon": "icons/ms-Sapo_Xule_vs._Os_Invasores_do_Brejo.png",
     "bundle": "com.nfc.game.ms-sapo_xule_vs._os_invasores_do_brejo",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/ms/Sapo Xule vs. Os Invasores do Brejo.bin"
+    "url": "https://derekcrato.github.io/nfcemu/?game=ms-Sapo_Xule_vs._Os_Invasores_do_Brejo"
   },
   "nes-Super_Mario_Bros._3": {
     "id": "nes-Super_Mario_Bros._3",
@@ -97,7 +97,7 @@
     "rom": "roms/nes/Super Mario Bros. 3.nes",
     "icon": "icons/nes-Super_Mario_Bros._3.png",
     "bundle": "com.nfc.game.nes-super_mario_bros._3",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/nes/Super Mario Bros. 3.nes"
+    "url": "https://derekcrato.github.io/nfcemu/?game=nes-Super_Mario_Bros._3"
   },
   "ps1-Digimon_World": {
     "id": "ps1-Digimon_World",
@@ -107,7 +107,7 @@
     "rom": "roms/ps1/Digimon World.cue",
     "icon": "icons/ps1-Digimon_World.png",
     "bundle": "com.nfc.game.ps1-digimon_world",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/ps1/Digimon World.cue"
+    "url": "https://derekcrato.github.io/nfcemu/?game=ps1-Digimon_World"
   },
   "snes-Super_Bomberman_5": {
     "id": "snes-Super_Bomberman_5",
@@ -117,7 +117,7 @@
     "rom": "roms/snes/Super Bomberman 5.sfc",
     "icon": "icons/snes-Super_Bomberman_5.png",
     "bundle": "com.nfc.game.snes-super_bomberman_5",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/snes/Super Bomberman 5.sfc"
+    "url": "https://derekcrato.github.io/nfcemu/?game=snes-Super_Bomberman_5"
   },
   "snes-Super_Mario_World": {
     "id": "snes-Super_Mario_World",
@@ -127,6 +127,6 @@
     "rom": "roms/snes/Super Mario World.sfc",
     "icon": "icons/snes-Super_Mario_World.png",
     "bundle": "com.nfc.game.snes-super_mario_world",
-    "url": "https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/snes/Super Mario World.sfc"
+    "url": "https://derekcrato.github.io/nfcemu/?game=snes-Super_Mario_World"
   }
 }

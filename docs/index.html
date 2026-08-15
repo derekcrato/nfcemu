@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFC Launcher</title>
+  <style>
+    body { font-family: system-ui, sans-serif; text-align: center; padding: 20px; }
+    .btn { display: inline-block; padding: 12px 24px; background: #007AFF; color: white; text-decoration: none; border-radius: 8px; margin: 10px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div id="launcher-section">
+    <h1>Instale o NFC Launcher</h1>
+    <p>Para jogar, voce precisa instalar o NFC Launcher primeiro.</p>
+    <a class="btn" href="https://github.com/derekcrato/nfcemu/releases" id="download-btn">Baixar NFC Launcher</a>
+  </div>
+
+  <div id="game-section" class="hidden">
+    <h1>Abrindo jogo...</h1>
+    <p>Se nao abrir automaticamente, toque no botao abaixo.</p>
+    <a class="btn" href="#" id="play-btn">Abrir Jogo</a>
+  </div>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const gameId = params.get('game');
+      const repo = 'derekcrato/nfcemu';
+
+      if (!gameId) {
+        document.getElementById('launcher-section').classList.remove('hidden');
+        return;
+      }
+
+      const launcherScheme = 'com.nfc.launcher://play?game=' + encodeURIComponent(gameId);
+      const playBtn = document.getElementById('play-btn');
+      const gameSection = document.getElementById('game-section');
+      const launcherSection = document.getElementById('launcher-section');
+
+      playBtn.href = launcherScheme;
+
+      gameSection.classList.remove('hidden');
+      launcherSection.classList.add('hidden');
+
+      setTimeout(function() {
+        window.location.href = launcherScheme;
+      }, 500);
+
+      setTimeout(function() {
+        if (document.hidden === false) {
+          gameSection.classList.add('hidden');
+          launcherSection.classList.remove('hidden');
+        }
+      }, 3000);
+    })();
+  </script>
+</body>
+</html>

@@ -49,7 +49,7 @@ for system, folder in sorted(SYSTEM_CORES.items()):
             "rom": f"roms/{system}/{fname.name}",
             "icon": f"icons/{game_id}.png",
             "bundle": f"com.nfc.game.{game_id.lower()}",
-            "url": f"https://raw.githubusercontent.com/{os.environ.get('GITHUB_REPOSITORY', 'derekcrato/nfcemu')}/main/roms/{system}/{fname.name}",
+            "url": f"https://derekcrato.github.io/nfcemu/?game={game_id}",
         }
         CONFIG[game_id] = game_config
 
