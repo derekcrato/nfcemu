@@ -40,12 +40,29 @@ nfc/
 
 ## Uso
 
-### Escrevendo tags NFC
+### 1. Instale o launcher primeiro
+
+O launcher e quem intercepta a tag NFC e abre o jogo.
+
+- **Android**: instale o APK do launcher pela release `launchers-*` no GitHub.
+- **iOS**: instale o IPA do launcher pela release `launchers-*` no GitHub.
+
+Se o launcher nao estiver instalado, a URL da tag NFC abrira no navegador e dara erro 404, pois `raw.githubusercontent.com` nao e uma pagina HTML.
+
+### 2. Escreva as tags NFC
 
 Use qualquer app de gravacao NFC para escrever URLs no formato:
 ```
-https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/roms/SISTEMA/JOGO.EXT
+https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/SISTEMA/JOGO.EXT
 ```
+
+### 3. Aproxime a tag do celular
+
+Com o launcher instalado:
+- O app abre automaticamente
+- Identifica o jogo pela URL
+- Se o standalone ja existir, abre o jogo direto
+- Se nao existir, baixa e instala o standalone do RetroArch
 
 ### Build local
 
