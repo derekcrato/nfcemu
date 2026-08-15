@@ -5,8 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 GAMES_JSON = DIST / "games.json"
-TEMPLATE_DIR = ROOT / "packager" / "android" / "template"
-BUILD_DIR = ROOT / "build" / "android"
+BUILD_DIR = ROOT / "build"
 KEYSTORE = ROOT / "packager" / "android" / "keystore.jks"
 KEY_ALIAS = "nfc"
 KEYSTORE_PASS = "nfc123"
@@ -19,32 +18,44 @@ CORES_DIR = Path(os.environ.get("RETROARCH_CORES_DIR", "/tmp/ra-cores"))
 os.makedirs(BUILD_DIR, exist_ok=True)
 os.makedirs(CORES_DIR, exist_ok=True)
 
-def download_core(core_name, dest):
-    dest_file = dest / f"{core_name}_libretro_android.so"
+ICON_SRC = ROOT / "icons"
+ICON_PLACEHOLDER = ROOT / "packager" / "android" / "template" / "icon.png"
+
+def core_path_for(core_name, abi="arm64-v8a"):
+    candidates = [
+        CORES_DIR / f"{core_name}_libretro_android.so",
+        CORES_DIR / abi / f"{core_name}_libretro_android.so",
+        CORES_DIR / f"{core_name}_libretro_android.so.zip",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return None
+
+def download_core(core_name):
+    dest_file = CORES_DIR / f"{core_name}_libretro_android.so"
     if dest_file.exists():
         return dest_file
     url = f"https://buildbot.libretro.com/nightly/android/latest/{core_name}_libretro_android.so.zip"
     print(f"Baixando core {core_name} do buildbot...")
-    if dest_file.exists():
-        return dest_file
     raise FileNotFoundError(f"Core {core_name} nao encontrado em {CORES_DIR}. Coloque-o la antes de buildar.")
 
 def build_apk(game):
-    game_dir = BUILD_DIR / game["id"]
+    game_dir = BUILD_DIR / "android" / game["id"]
     if game_dir.exists():
         shutil.rmtree(game_dir)
     game_dir.mkdir(parents=True)
 
     pkg = game["bundle"]
     app_name = game["name"]
-    core_file = download_core(game["core"], CORES_DIR)
+    core_file = download_core(game["core"])
     rom_src = ROOT / game["rom"]
     if not rom_src.exists():
         raise FileNotFoundError(f"ROM nao encontrada: {rom_src}")
 
     apk_path = game_dir / f"{game['id']}.apk"
-
     temp_apk = game_dir / "temp.apk"
+
     with zipfile.ZipFile(temp_apk, "w", zipfile.ZIP_DEFLATED) as z:
         manifest = f"""<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -81,6 +92,13 @@ libretro_path = /data/data/{pkg}/files/cores/{lib_name}
 """
         z.writestr("assets/retroarch.cfg", cfg.encode("utf-8"))
 
+        icon_file = ICON_SRC / f"{game['id']}.png"
+        if not icon_file.exists() and ICON_PLACEHOLDER.exists():
+            icon_file = ICON_PLACEHOLDER
+        if icon_file.exists():
+            with open(icon_file, "rb") as ic:
+                z.writestr("res/mipmap-xxhdpi-v4/ic_launcher.png", ic.read())
+
     aligned = game_dir / "aligned.apk"
     subprocess.run(["zipalign", "-v", "4", str(temp_apk), str(aligned)], check=True)
 
@@ -104,11 +122,11 @@ libretro_path = /data/data/{pkg}/files/cores/{lib_name}
     return apk_path
 
 def build_ipa(game):
-    game_dir = BUILD_DIR / game["id"]
+    game_dir = BUILD_DIR / "ios" / game["id"]
     game_dir.mkdir(parents=True, exist_ok=True)
     pkg = game["bundle"]
     app_name = game["name"]
-    core_file = download_core(game["core"], CORES_DIR)
+    core_file = download_core(game["core"])
     rom_src = ROOT / game["rom"]
     if not rom_src.exists():
         raise FileNotFoundError(f"ROM nao encontrada: {rom_src}")
@@ -147,9 +165,11 @@ libretro_path = {lib_name}
 """
     (app_dir / "retroarch.cfg").write_text(cfg, encoding="utf-8")
 
-    icon = ROOT / game.get("icon", "")
-    if icon.exists():
-        shutil.copy2(icon, app_dir / "Icon.png")
+    icon_file = ICON_SRC / f"{game['id']}.png"
+    if not icon_file.exists() and ICON_PLACEHOLDER.exists():
+        icon_file = ICON_PLACEHOLDER
+    if icon_file.exists():
+        shutil.copy2(icon_file, app_dir / "Icon.png")
     else:
         (app_dir / "Icon.png").write_bytes(b"\x00" * 100)
 
