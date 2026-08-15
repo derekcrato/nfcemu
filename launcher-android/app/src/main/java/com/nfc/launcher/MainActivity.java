@@ -54,14 +54,14 @@ public class MainActivity extends AppCompatActivity {
 
         loadGameIndex();
 
+        handleIntent(getIntent());
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.NFC)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.NFC},
                     NFC_PERMISSION_REQUEST);
         }
-
-        handleIntent(getIntent());
     }
 
     private void loadGameIndex() {
@@ -105,6 +105,18 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleIntent(Intent intent) {
         if (intent == null) return;
+
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Uri data = intent.getData();
+            if (data != null && "com.nfc.launcher".equals(data.getScheme())) {
+                String gameId = data.getQueryParameter("game");
+                if (gameId != null && gameIndex.containsKey(gameId)) {
+                    launchGame(gameId);
+                    return;
+                }
+            }
+        }
+
         String action = intent.getAction();
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action) ||
             NfcAdapter.ACTION_TAG_DISCOVERED.equals(action) ||
