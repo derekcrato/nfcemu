@@ -1,26 +1,24 @@
-name: Build NFC Launchers
+name: Build Launchers
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
       - 'launcher-android/**'
       - 'launcher-ios/**'
-  workflow_dispatch:
 
 jobs:
   android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
           cache: gradle
-
       - name: Build Android Launcher
         run: |
           cd launcher-android
@@ -28,11 +26,10 @@ jobs:
             chmod +x gradlew
             ./gradlew assembleRelease
           else
-            echo "gradlew not found, skipping Android launcher build"
+            echo "gradlew not found, skipping"
+            exit 1
           fi
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: nfc-launcher-android
           path: launcher-android/app/build/outputs/apk/release/*.apk
@@ -42,20 +39,23 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Build iOS Launcher
         run: |
           cd launcher-ios
-          xcodebuild -project NFCLauncher.xcodeproj \
-            -scheme NFCLauncher \
-            -configuration Release \
-            -archivePath build/NFCLauncher.xcarchive \
-            archive
-          xcodebuild -exportArchive \
-            -archivePath build/NFCLauncher.xcarchive \
-            -exportPath build \
-            -exportOptionsPlist ExportOptions.plist
-
+          if [ -f NFCLauncher.xcodeproj ]; then
+            xcodebuild -project NFCLauncher.xcodeproj \
+              -scheme NFCLauncher \
+              -configuration Release \
+              -archivePath build/NFCLauncher.xcarchive \
+              archive
+            xcodebuild -exportArchive \
+              -archivePath build/NFCLauncher.xcarchive \
+              -exportPath build \
+              -exportOptionsPlist App/ExportOptions.plist
+          else
+            echo "Xcode project not found, skipping"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: nfc-launcher-ios
@@ -70,7 +70,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:

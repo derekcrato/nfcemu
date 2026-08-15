@@ -1,4 +1,4 @@
-name: Build RetroArch Standalone Games
+name: Build and Release
 
 on:
   workflow_dispatch:
@@ -7,38 +7,29 @@ on:
     paths:
       - 'scripts/**'
       - 'packager/**'
+      - 'launcher-android/**'
+      - 'launcher-ios/**'
       - 'dist/games.json'
 
 jobs:
-  build:
+  build-standalone:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         game: ${{ fromJson(needs.scan.outputs.games) }}
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Scan ROMs
-        id: scan
-        run: |
-          python3 scripts/generate_nfc_links.py
-          echo "games=$(cat dist/games.json | jq -c 'keys')" >> $GITHUB_OUTPUT
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Download RetroArch Core
+      - name: Install tools
         run: |
           sudo apt-get update -y
           sudo apt-get install -y zipalign apksigner
-          npm install -g apk-editor
-
+      - name: Download RetroArch Core
+        run: |
           CORES_DIR="${{ runner.temp }}/ra-cores"
           mkdir -p "$CORES_DIR"
-
           GAME_ID="${{ matrix.game }}"
           SYSTEM=$(echo "$GAME_ID" | sed 's/-.*//')
           case "$SYSTEM" in
@@ -50,19 +41,13 @@ jobs:
             ps1) CORE="mednafen_psx" ;;
             *) CORE="fceumm" ;;
           esac
-
           curl -L -o "$CORES_DIR/${CORE}_libretro_android.so.zip" \
             "https://buildbot.libretro.com/nightly/android/latest/${CORE}_libretro_android.so.zip"
           unzip -o "$CORES_DIR/${CORE}_libretro_android.so.zip" -d "$CORES_DIR"
-
           echo "CORES_DIR=$CORES_DIR" >> $GITHUB_ENV
-
       - name: Build Standalone APK
-        run: |
-          python3 packager/build_standalone.py android ${{ matrix.game }}
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+        run: python3 packager/build_standalone.py android ${{ matrix.game }}
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.game }}
           path: build/android/${{ matrix.game }}/*.apk
@@ -81,14 +66,13 @@ jobs:
           echo "games=$(cat dist/games.json | jq -c 'keys')" >> $GITHUB_OUTPUT
 
   release:
-    needs: build
+    needs: build-standalone
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
