@@ -28,7 +28,7 @@ jobs:
         run: |
           cd launcher-android
           chmod +x gradlew
-          ./gradlew :app:assembleRelease
+          ./gradlew :app:assembleRelease --stacktrace --info
       - uses: actions/upload-artifact@v4
         with:
           name: nfc-launcher-android
