@@ -53,8 +53,13 @@ Se o launcher nao estiver instalado, a URL da tag NFC abrira no navegador e dara
 
 Use qualquer app de gravacao NFC para escrever URLs no formato:
 ```
-https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/SISTEMA/JOGO.EXT
+https://derekcrato.github.io/nfcemu/?game=ID_DO_JOGO
 ```
+
+A pagina de redirecionamento vai:
+- Tentar abrir o NFC Launcher automaticamente
+- Se o launcher nao estiver instalado, mostrar botao para baixar
+- Se estiver instalado, abrir o jogo direto
 
 ### 3. Aproxime a tag do celular
 
@@ -130,19 +135,19 @@ Edite `scripts/generate_nfc_links.py` para ajustar:
 
 Use esses links para gravar nas tags NFC:
 
-- `nes/Super Mario Bros. 3.nes`
-- `snes/Super Mario World.sfc`
-- `snes/Super Bomberman 5.sfc`
-- `gba/Pokemon Crystal Advanced Redux.gba`
-- `gba/Pokemon GS Chronicles.gba`
-- `gbx/Crystal Version.GBC`
-- `gbx/Pokemon vermelho.gb`
-- `gbx/Pokemon Yellow.gbc`
-- `md/Michael Jackson Moonwalker.bin`
-- `ms/Alex Kidd in Miracle World.sms`
-- `ms/Psycho Fox.sms`
-- `ms/Sapo Xule vs. Os Invasores do Brejo.bin`
-- `ps1/Digimon World.cue`
+- `https://derekcrato.github.io/nfcemu/?game=gba-Pokemon_Crystal_advanced_Redux`
+- `https://derekcrato.github.io/nfcemu/?game=gba-Pokemon_GS_Chronicles`
+- `https://derekcrato.github.io/nfcemu/?game=gbx-Crystal_Version`
+- `https://derekcrato.github.io/nfcemu/?game=gbx-Pokemon_vermelho`
+- `https://derekcrato.github.io/nfcemu/?game=gbx-Pokemon_Yellow`
+- `https://derekcrato.github.io/nfcemu/?game=md-Michael_Jackson_Moonwalker`
+- `https://derekcrato.github.io/nfcemu/?game=ms-Alex_Kidd_in_Miracle_World`
+- `https://derekcrato.github.io/nfcemu/?game=ms-Psycho_Fox`
+- `https://derekcrato.github.io/nfcemu/?game=ms-Sapo_Xule_vs._Os_Invasores_do_Brejo`
+- `https://derekcrato.github.io/nfcemu/?game=nes-Super_Mario_Bros._3`
+- `https://derekcrato.github.io/nfcemu/?game=ps1-Digimon_World`
+- `https://derekcrato.github.io/nfcemu/?game=snes-Super_Bomberman_5`
+- `https://derekcrato.github.io/nfcemu/?game=snes-Super_Mario_World`
 
 Exemplo de link completo:
 ```
