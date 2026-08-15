@@ -1,13 +1,13 @@
 name: Build RetroArch Standalone Games
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'roms/**'
       - 'scripts/**'
       - 'packager/**'
-  workflow_dispatch:
+      - 'dist/games.json'
 
 jobs:
   build:
