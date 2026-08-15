@@ -15,8 +15,8 @@
   <div id="launcher-section">
     <h1>Instale o NFC Launcher</h1>
     <p>Para jogar, voce precisa instalar o NFC Launcher primeiro.</p>
-    <a class="btn" id="download-android" href="/nfcemu/nfc-launcher-android.apk" download>Baixar para Android</a>
-    <a class="btn" id="download-ios" href="/nfcemu/nfc-launcher-ios.ipa" download>Baixar para iOS</a>
+    <a class="btn" id="download-android" href="https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-android.apk" download>Baixar para Android</a>
+    <a class="btn" id="download-ios" href="https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-ios.ipa" download>Baixar para iOS</a>
     <p class="error" id="platform-error"></p>
   </div>
 
@@ -37,20 +37,25 @@
       const downloadIOS = document.getElementById('download-ios');
       const platformError = document.getElementById('platform-error');
 
+      const androidUrl = 'https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-android.apk';
+      const iosUrl = 'https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-ios.ipa';
+
       if (isAndroid) {
-        downloadAndroid.href = '/nfcemu/nfc-launcher-android.apk';
+        downloadAndroid.href = androidUrl;
         downloadAndroid.setAttribute('download', 'nfc-launcher-android.apk');
         downloadAndroid.style.display = 'inline-block';
+        downloadAndroid.removeAttribute('onclick');
         downloadIOS.style.display = 'none';
       } else if (isIOS) {
-        downloadIOS.href = '/nfcemu/nfc-launcher-ios.ipa';
+        downloadIOS.href = iosUrl;
         downloadIOS.setAttribute('download', 'nfc-launcher-ios.ipa');
         downloadIOS.style.display = 'inline-block';
+        downloadIOS.removeAttribute('onclick');
         downloadAndroid.style.display = 'none';
       } else {
-        downloadAndroid.href = '/nfcemu/nfc-launcher-android.apk';
+        downloadAndroid.href = androidUrl;
         downloadAndroid.setAttribute('download', 'nfc-launcher-android.apk');
-        downloadIOS.href = '/nfcemu/nfc-launcher-ios.ipa';
+        downloadIOS.href = iosUrl;
         downloadIOS.setAttribute('download', 'nfc-launcher-ios.ipa');
         platformError.textContent = 'Selecione seu sistema:';
       }
