@@ -93,3 +93,33 @@ Edite `scripts/generate_nfc_links.py` para ajustar:
 - Apos primeira instalacao, o jogo abre sem NFC
 - NFC subsequente apenas abre o jogo instalado
 - Todos os binaries sao hospedados no proprio repositorio GitHub
+
+## Links NFC de teste
+
+Use esses links para gravar nas tags NFC:
+
+- `nes/Super Mario Bros. 3.nes`
+- `snes/Super Mario World.sfc`
+- `snes/Super Bomberman 5.sfc`
+- `gba/Pokemon Crystal Advanced Redux.gba`
+- `gba/Pokemon GS Chronicles.gba`
+- `gbx/Crystal Version.GBC`
+- `gbx/Pokemon vermelho.gb`
+- `gbx/Pokemon Yellow.gbc`
+- `md/Michael Jackson Moonwalker.bin`
+- `ms/Alex Kidd in Miracle World.sms`
+- `ms/Psycho Fox.sms`
+- `ms/Sapo Xule vs. Os Invasores do Brejo.bin`
+- `ps1/Digimon World.cue`
+
+Exemplo de link completo:
+```
+https://raw.githubusercontent.com/derekcrato/nfcemu/main/roms/nes/Super%20Mario%20Bros.%203.nes
+```
+
+## Estado do projeto
+
+- `roms/` deve ser preenchido localmente e nao e versionado
+- `dist/games.json` e gerado automaticamente a partir de `roms/`
+- Launchers e packager estao prontos para build/teste
+- CI/CD precisa de ajustes para nao mexer em `roms/`
