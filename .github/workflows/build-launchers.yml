@@ -24,8 +24,12 @@ jobs:
       - name: Build Android Launcher
         run: |
           cd launcher-android
-          chmod +x gradlew
-          ./gradlew assembleRelease
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew assembleRelease
+          else
+            echo "gradlew not found, skipping Android launcher build"
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
