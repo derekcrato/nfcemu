@@ -2,28 +2,31 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NFC Emulator</title>
     <style>
-        body, html { margin: 0; padding: 0; font-family: system-ui, sans-serif; background: #111; color: #fff; }
-        #game-container { width: 100%; max-width: 800px; margin: 0 auto; aspect-ratio: 4/3; background: #000; position: relative; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: system-ui, sans-serif; }
+        #game-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; }
         #game { width: 100%; height: 100%; }
-        #save-panel { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: none; z-index: 9999; padding: 20px; box-sizing: border-box; }
-        #save-panel.active { display: block; }
-        .panel-content { max-width: 600px; margin: 0 auto; padding-top: 50px; }
-        .panel-content h2 { text-align: center; margin-bottom: 20px; }
-        .save-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .save-slot { background: #222; border: 2px solid #333; padding: 15px; text-align: center; cursor: pointer; border-radius: 8px; }
-        .save-slot:hover { border-color: #007AFF; }
-        .save-slot .slot-number { font-size: 24px; font-weight: bold; color: #007AFF; }
-        .save-slot .slot-date { font-size: 12px; color: #888; margin-top: 5px; }
-        .save-slot.empty { opacity: 0.5; }
-        .btn { background: #007AFF; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 5px; }
-        .btn:hover { background: #0051D5; }
-        .btn-secondary { background: #555; }
-        .btn-secondary:hover { background: #444; }
-        #controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
-        #controls .btn { padding: 12px 24px; font-size: 16px; }
+        #game iframe { width: 100%; height: 100%; border: none; }
+        #ui { position: fixed; top: 10px; left: 10px; right: 10px; display: flex; gap: 10px; justify-content: center; z-index: 100; pointer-events: none; }
+        #ui > * { pointer-events: auto; }
+        .btn { background: rgba(0,0,0,0.7); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; backdrop-filter: blur(10px); }
+        .btn:active { background: rgba(0,122,255,0.8); }
+        #panel { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: none; z-index: 999; padding: 20px; overflow-y: auto; }
+        #panel.active { display: block; }
+        .panel-content { max-width: 500px; margin: 0 auto; padding-top: 50px; }
+        .panel-content h2 { text-align: center; color: #fff; margin-bottom: 20px; }
+        .slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .slot { background: #222; border: 2px solid #333; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; min-height: 100px; display: flex; flex-direction: column; justify-content: center; }
+        .slot:active { border-color: #007AFF; }
+        .slot .num { font-size: 32px; font-weight: bold; color: #007AFF; }
+        .slot .info { font-size: 11px; color: #888; margin-top: 5px; }
+        .slot.empty .num { color: #555; }
+        .slot-btns { margin-top: 10px; }
+        .slot-btns button { padding: 6px 12px; font-size: 12px; margin: 2px; }
+        #close-btn { position: fixed; top: 20px; right: 20px; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -31,227 +34,168 @@
         <div id="game">Carregando emulador...</div>
     </div>
 
-    <div id="controls">
-        <button class="btn" onclick="showSavePanel()">Salvar</button>
-        <button class="btn" onclick="showLoadPanel()">Carregar</button>
+    <div id="ui">
+        <button class="btn" id="save-btn">Salvar</button>
+        <button class="btn" id="load-btn">Carregar</button>
     </div>
 
-    <div id="save-panel">
+    <div id="panel">
+        <button class="btn" id="close-btn">Fechar</button>
         <div class="panel-content">
-            <h2 id="panel-title">Gerenciar Saves</h2>
-            <div class="save-slots" id="save-slots"></div>
-            <div style="text-align: center;">
-                <button class="btn btn-secondary" onclick="closeSavePanel()">Fechar</button>
-            </div>
+            <h2 id="panel-title">Saves</h2>
+            <div class="slots" id="slots"></div>
         </div>
     </div>
 
     <script>
-        (function() {
-            const params = new URLSearchParams(window.location.search);
-            const romUrl = params.get('rom');
-            const gameId = params.get('game') || romUrl;
-            
-            if (!romUrl) {
-                document.getElementById('game').innerHTML = '<div style="color:#ff5555;padding:20px;text-align:center">Parâmetro ?rom= faltando</div>';
-                return;
-            }
+        const romUrl = 'https://raw.githubusercontent.com/derekcrato/nfcgames/main/Crystal%20Version.GBC';
+        const saveKey = 'nfc_save_crystal_gbc';
 
-            const system = (params.get('system') || 'gbc').toLowerCase();
-            const coreMap = {
-                'gbc': 'gb',
-                'gb': 'gb',
-                'gba': 'gba',
-                'nes': 'nes',
-                'snes': 'snes',
-                'n64': 'n64',
-                'genesis': 'segaMD',
-                'segaMD': 'segaMD',
-                'segacd': 'segaCD'
-            };
-            const core = coreMap[system] || 'gb';
-
-            window.EJS_player = '#game';
-            window.EJS_core = core;
-            window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-            window.EJS_gameUrl = romUrl;
-
-            window.NFC_SAVE_KEY = 'nfc_save_' + btoa(gameId).replace(/[^a-zA-Z0-9]/g, '');
-        })();
+        window.EJS_player = '#game';
+        window.EJS_core = 'gb';
+        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        window.EJS_gameUrl = romUrl;
     </script>
 
     <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 
     <script>
         (function() {
-            const dbName = 'NFCEmulatorSaves';
-            const storeName = 'saves';
-            let db = null;
+            const panel = document.getElementById('panel');
+            const slotsContainer = document.getElementById('slots');
 
-            function openDB() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(dbName, 1);
-                    request.onerror = () => reject(request.error);
-                    request.onsuccess = () => resolve(request.result);
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        if (!db.objectStoreNames.contains(storeName)) {
-                            const store = db.createObjectStore(storeName, { keyPath: 'id' });
-                            store.createIndex('gameId', 'gameId', { unique: false });
+            document.getElementById('save-btn').addEventListener('click', () => openPanel('save'));
+            document.getElementById('load-btn').addEventListener('click', () => openPanel('load'));
+            document.getElementById('close-btn').addEventListener('click', closePanel);
+
+            function openPanel(mode) {
+                document.getElementById('panel-title').textContent = mode === 'save' ? 'Salvar Jogo' : 'Carregar Jogo';
+                renderSlots(mode);
+                panel.classList.add('active');
+            }
+
+            function closePanel() {
+                panel.classList.remove('active');
+            }
+
+            function getGame() {
+                const iframe = document.querySelector('#game iframe');
+                if (iframe && iframe.contentWindow) {
+                    return iframe.contentWindow;
+                }
+                return window;
+            }
+
+            async function renderSlots(mode) {
+                slotsContainer.innerHTML = '';
+
+                for (let i = 1; i <= 8; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'slot empty';
+
+                    const saved = localStorage.getItem(`${saveKey}_slot_${i}`);
+                    if (saved) {
+                        try {
+                            const data = JSON.parse(saved);
+                            slot.classList.remove('empty');
+                            const date = new Date(data.date).toLocaleString('pt-BR');
+                            slot.innerHTML = `
+                                <div class="num">${i}</div>
+                                <div class="info">${date}</div>
+                                <div class="slot-btns">
+                                    <button class="btn" data-slot="${i}" data-action="load">Carregar</button>
+                                    <button class="btn btn-secondary" data-slot="${i}" data-action="delete">Excluir</button>
+                                </div>
+                            `;
+                        } catch (e) {
+                            console.error('Erro ao ler save:', e);
                         }
-                    };
+                    } else {
+                        slot.innerHTML = `
+                            <div class="num">${i}</div>
+                            <div class="info">Vazio - toque para salvar</div>
+                        `;
+                        if (mode === 'save') {
+                            slot.onclick = () => saveToSlot(i);
+                        }
+                    }
+
+                    slotsContainer.appendChild(slot);
+                }
+
+                slotsContainer.querySelectorAll('button[data-action="load"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        loadFromSlot(parseInt(btn.dataset.slot));
+                    });
+                });
+
+                slotsContainer.querySelectorAll('button[data-action="delete"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteSlot(parseInt(btn.dataset.slot));
+                    });
                 });
             }
 
-            async function saveGame(slot) {
-                if (!window.EJS) return alert('Emulador não carregado ainda');
-                const game = window.EJS;
-                if (!game || !game.game) return alert('Emulador não iniciado');
-
+            function saveToSlot(slot) {
                 try {
-                    const state = game.game.exportState();
-                    if (!state) return alert('Não foi possível exportar o save state');
+                    const gameWin = getGame();
+                    let state = null;
 
-                    const saveData = {
-                        id: `${window.NFC_SAVE_KEY}_slot_${slot}`,
-                        gameId: window.NFC_SAVE_KEY,
-                        slot: slot,
-                        state: state,
-                        screenshot: null,
+                    if (gameWin.EJS && gameWin.EJS.game && gameWin.EJS.game.exportState) {
+                        state = gameWin.EJS.game.exportState();
+                    } else if (gameWin.EJS_players && gameWin.EJS_players[0]) {
+                        state = gameWin.EJS_players[0].exportState();
+                    }
+
+                    if (!state) {
+                        alert('Nao foi possivel exportar o save. Tente novamente.');
+                        return;
+                    }
+
+                    const data = {
+                        state: Array.from(state),
                         date: new Date().toISOString()
                     };
 
-                    const screenshot = game.game.exportScreenshot();
-                    if (screenshot) {
-                        saveData.screenshot = screenshot;
-                    }
-
-                    const db = await openDB();
-                    const tx = db.transaction(storeName, 'readwrite');
-                    const store = tx.objectStore(storeName);
-                    await new Promise((resolve, reject) => {
-                        const req = store.put(saveData);
-                        req.onsuccess = resolve;
-                        req.onerror = () => reject(req.error);
-                    });
-
-                    alert(`Jogo salvo no slot ${slot}`);
-                    renderSlots();
+                    localStorage.setItem(`${saveKey}_slot_${slot}`, JSON.stringify(data));
+                    alert(`Salvo no slot ${slot}`);
+                    renderSlots('save');
                 } catch (e) {
                     console.error('Erro ao salvar:', e);
                     alert('Erro ao salvar: ' + e.message);
                 }
             }
 
-            async function loadGame(slot) {
+            function loadFromSlot(slot) {
+                const saved = localStorage.getItem(`${saveKey}_slot_${slot}`);
+                if (!saved) return alert('Slot vazio');
+
                 try {
-                    const db = await openDB();
-                    const tx = db.transaction(storeName, 'readonly');
-                    const store = tx.objectStore(storeName);
-                    const data = await new Promise((resolve, reject) => {
-                        const req = store.get(`${window.NFC_SAVE_KEY}_slot_${slot}`);
-                        req.onsuccess = () => resolve(req.result);
-                        req.onerror = () => reject(req.error);
-                    });
+                    const data = JSON.parse(saved);
+                    const gameWin = getGame();
+                    const state = new Uint8Array(data.state);
 
-                    if (!data) return alert('Slot vazio');
+                    if (gameWin.EJS && gameWin.EJS.game && gameWin.EJS.game.loadState) {
+                        gameWin.EJS.game.loadState(state);
+                    } else if (gameWin.EJS_players && gameWin.EJS_players[0]) {
+                        gameWin.EJS_players[0].loadState(state);
+                    }
 
-                    const game = window.EJS;
-                    if (!game || !game.game) return alert('Emulador não iniciado');
-
-                    await game.game.loadState(data.state);
                     alert('Save carregado!');
-                    closeSavePanel();
+                    closePanel();
                 } catch (e) {
                     console.error('Erro ao carregar:', e);
                     alert('Erro ao carregar: ' + e.message);
                 }
             }
 
-            async function deleteSave(slot) {
+            function deleteSlot(slot) {
                 if (!confirm('Excluir este save?')) return;
-                try {
-                    const db = await openDB();
-                    const tx = db.transaction(storeName, 'readwrite');
-                    const store = tx.objectStore(storeName);
-                    await new Promise((resolve, reject) => {
-                        const req = store.delete(`${window.NFC_SAVE_KEY}_slot_${slot}`);
-                        req.onsuccess = resolve;
-                        req.onerror = () => reject(req.error);
-                    });
-                    renderSlots();
-                } catch (e) {
-                    alert('Erro ao excluir: ' + e.message);
-                }
+                localStorage.removeItem(`${saveKey}_slot_${slot}`);
+                renderSlots('save');
             }
-
-            async function renderSlots() {
-                const container = document.getElementById('save-slots');
-                container.innerHTML = '';
-
-                try {
-                    const db = await openDB();
-                    const tx = db.transaction(storeName, 'readonly');
-                    const store = tx.objectStore(storeName);
-                    const allSaves = await new Promise((resolve, reject) => {
-                        const req = store.getAll();
-                        req.onsuccess = () => resolve(req.result);
-                        req.onerror = () => reject(req.error);
-                    });
-
-                    const gameSaves = allSaves.filter(s => s.gameId === window.NFC_SAVE_KEY);
-
-                    for (let i = 1; i <= 8; i++) {
-                        const slot = gameSaves.find(s => s.slot === i);
-                        const div = document.createElement('div');
-                        div.className = 'save-slot' + (slot ? '' : ' empty');
-
-                        if (slot) {
-                            const date = new Date(slot.date).toLocaleString('pt-BR');
-                            div.innerHTML = `
-                                <div class="slot-number">${i}</div>
-                                <div class="slot-date">${date}</div>
-                                <button class="btn" onclick="event.stopPropagation(); window.NFC_load(${i})">Carregar</button>
-                                <button class="btn btn-secondary" onclick="event.stopPropagation(); window.NFC_delete(${i})">Excluir</button>
-                            `;
-                        } else {
-                            div.innerHTML = `
-                                <div class="slot-number">${i}</div>
-                                <div class="slot-date">Vazio</div>
-                            `;
-                            div.onclick = () => window.NFC_save(i);
-                        }
-
-                        container.appendChild(div);
-                    }
-                } catch (e) {
-                    console.error('Erro ao renderizar slots:', e);
-                }
-            }
-
-            window.NFC_save = saveGame;
-            window.NFC_load = loadGame;
-            window.NFC_delete = deleteSave;
-
-            function showSavePanel() {
-                document.getElementById('panel-title').textContent = 'Salvar Jogo';
-                renderSlots();
-                document.getElementById('save-panel').classList.add('active');
-            }
-
-            function showLoadPanel() {
-                document.getElementById('panel-title').textContent = 'Carregar Jogo';
-                renderSlots();
-                document.getElementById('save-panel').classList.add('active');
-            }
-
-            window.showSavePanel = showSavePanel;
-            window.showLoadPanel = showLoadPanel;
-
-            function closeSavePanel() {
-                document.getElementById('save-panel').classList.remove('active');
-            }
-            window.closeSavePanel = closeSavePanel;
         })();
     </script>
 </body>
