@@ -7,10 +7,30 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; }
+        #game { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
-    <iframe src="https://www.retrogames.cc/embed/42046-sonic-classic-heroes.html" allow="fullscreen; autoplay; gamepad"></iframe>
+    <div id="game">Carregando...</div>
+
+    <script>
+        const romUrl = 'https://derekcrato.github.io/nfcemu/roms/crystal-version.gbc';
+        const system = 'gbc';
+        const core = 'gb';
+
+        window.EJS_player = '#game';
+        window.EJS_core = core;
+        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        window.EJS_gameUrl = romUrl;
+        window.EJS_biosUrl = '';
+        window.EJS_saveStateURL = '';
+        window.EJS_loadStateURL = '';
+        window.EJS_saveStateName = '';
+        window.EJS_cheats = null;
+        window.EJS_debug = false;
+        window.EJS_language = 'pt-BR';
+    </script>
+
+    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 </body>
 </html>
