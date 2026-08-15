@@ -18,16 +18,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
     private static final int NFC_PERMISSION_REQUEST = 1001;
     private NfcAdapter nfcAdapter;
     private PendingIntent pendingIntent;
+    private Map<String, JSONObject> gameIndex = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
                 PendingIntent.FLAG_MUTABLE
         );
 
+        loadGameIndex();
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.NFC)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
@@ -55,6 +62,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         handleIntent(getIntent());
+    }
+
+    private void loadGameIndex() {
+        try {
+            InputStream is = getAssets().open("games.json");
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+            br.close();
+            JSONObject root = new JSONObject(sb.toString());
+            for (String key : root.keySet()) {
+                gameIndex.put(key, root.getJSONObject(key));
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Falha ao carregar indice de jogos", Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
@@ -127,8 +153,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         String gameId = extractGameId(url);
-        if (gameId == null) {
-            Toast.makeText(this, "Jogo nao identificado", Toast.LENGTH_SHORT).show();
+        if (gameId == null || !gameIndex.containsKey(gameId)) {
+            Toast.makeText(this, "Jogo nao identificado: " + gameId, Toast.LENGTH_LONG).show();
             return;
         }
 
