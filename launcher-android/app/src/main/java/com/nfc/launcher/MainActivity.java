@@ -1,33 +1,31 @@
 package com.nfc.launcher;
 
+import android.Manifest;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.os.Environment;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int NFC_PERMISSION_REQUEST = 1001;
     private NfcAdapter nfcAdapter;
     private PendingIntent pendingIntent;
 
@@ -49,6 +47,13 @@ public class MainActivity extends AppCompatActivity {
                 PendingIntent.FLAG_MUTABLE
         );
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.NFC)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.NFC},
+                    NFC_PERMISSION_REQUEST);
+        }
+
         handleIntent(getIntent());
     }
 
@@ -56,6 +61,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onNewIntent(@NonNull Intent intent) {
         super.onNewIntent(intent);
         handleIntent(intent);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NFC_PERMISSION_REQUEST &&
+                grantResults.length > 0 &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Permissao NFC concedida", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Permissao NFC negada", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void handleIntent(Intent intent) {
@@ -69,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
 
             Ndef ndef = Ndef.get(tag);
             if (ndef == null) {
-                readRawTag(tag);
+                Toast.makeText(this, "Tag NFC sem NDEF", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -80,32 +99,11 @@ public class MainActivity extends AppCompatActivity {
                 if (message != null && message.getRecords().length > 0) {
                     processNdefMessage(message);
                 }
-            } catch (IOException | FormatException e) {
+            } catch (IOException | android.nfc.FormatException e) {
                 e.printStackTrace();
                 Toast.makeText(this, "Erro ao ler NFC", Toast.LENGTH_SHORT).show();
             }
         }
-    }
-
-    private void readRawTag(Tag tag) {
-        NdefMessage message = createFallbackMessage(tag);
-        if (message != null) {
-            processNdefMessage(message);
-        }
-    }
-
-    private NdefMessage createFallbackMessage(Tag tag) {
-        byte[] id = tag.getId();
-        String tagId = bytesToHex(id);
-        String url = "https://raw.githubusercontent.com/" + getGitHubRepo() + "/main/roms/unknown/" + tagId;
-        NdefRecord record = NdefRecord.createUri(url);
-        return new NdefMessage(new NdefRecord[]{record});
-    }
-
-    private String bytesToHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) sb.append(String.format("%02X", b));
-        return sb.toString();
     }
 
     private void processNdefMessage(NdefMessage message) {
@@ -124,13 +122,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!url.contains(getGitHubRepo())) {
-            Toast.makeText(this, "Repositorio GitHub nao autorizado", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Repositorio nao autorizado", Toast.LENGTH_SHORT).show();
             return;
         }
 
         String gameId = extractGameId(url);
         if (gameId == null) {
-            Toast.makeText(this, "Nao foi possivel identificar o jogo", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Jogo nao identificado", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -177,9 +175,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void launchGame(String gameId) {
-        boolean isAndroid = true;
-        boolean isIOS = false;
-
         String standalonePkg = getStandalonePackage(gameId);
         if (isPackageInstalled(standalonePkg)) {
             openStandalone(gameId, standalonePkg);
@@ -188,6 +183,7 @@ public class MainActivity extends AppCompatActivity {
 
         String basePkg = "com.retroarch.aarch64";
         if (isPackageInstalled(basePkg)) {
+            cacheRomForBase(gameId);
             openRetroArchBase(gameId, basePkg);
             return;
         }
@@ -224,15 +220,55 @@ public class MainActivity extends AppCompatActivity {
         startActivity(launch);
     }
 
+    private void cacheRomForBase(String gameId) {
+        File cacheDir = new File(getExternalFilesDir(null), "roms");
+        if (!cacheDir.exists()) cacheDir.mkdirs();
+        File cached = new File(cacheDir, gameId + ".rom");
+        if (cached.exists()) return;
+
+        String romPath = getGameRomPath(gameId);
+        if (romPath == null) return;
+        File src = new File(romPath);
+        if (!src.exists()) return;
+
+        try (FileInputStream fis = new FileInputStream(src);
+             FileOutputStream fos = new FileOutputStream(cached)) {
+            byte[] buf = new byte[65536];
+            int len;
+            while ((len = fis.read(buf)) > 0) {
+                fos.write(buf, 0, len);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void openRetroArchBase(String gameId, String pkg) {
         Intent launch = new Intent(Intent.ACTION_MAIN);
         launch.setClassName(pkg, "com.retroarch.browser.retroactivity.RetroActivityFuture");
-        launch.putExtra("ROM", getCachedRomPath(gameId));
-        launch.putExtra("LIBRETRO", getCorePath(gameId));
+        launch.putExtra("ROM", "/storage/emulated/0/Android/data/com.nfc.launcher/files/roms/" + gameId + ".rom");
+        launch.putExtra("LIBRETRO", "/data/data/" + pkg + "/files/cores/" + getCoreForGame(gameId) + "_libretro_android.so");
         launch.putExtra("CONFIGFILE", "/storage/emulated/0/Android/data/" + pkg + "/files/retroarch.cfg");
         launch.putExtra("QUITFOCUS", "");
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(launch);
+    }
+
+    private String getGameRomPath(String gameId) {
+        String system = gameId.split("-")[0];
+        String base = gameId.substring(system.length() + 1).replace("_", " ");
+        File dir = new File(getExternalFilesDir(null), "../roms/" + system);
+        if (!dir.exists()) return null;
+        File[] files = dir.listFiles();
+        if (files == null) return null;
+        for (File f : files) {
+            String name = f.getName();
+            int dot = name.lastIndexOf('.');
+            if (dot > 0 && name.substring(0, dot).equalsIgnoreCase(base)) {
+                return f.getAbsolutePath();
+            }
+        }
+        return null;
     }
 
     private String getCoreForGame(String gameId) {
@@ -251,10 +287,6 @@ public class MainActivity extends AppCompatActivity {
 
     private String getCorePath(String gameId) {
         return "/data/data/com.retroarch.aarch64/cores/" + getCoreForGame(gameId) + "_libretro_android.so";
-    }
-
-    private String getCachedRomPath(String gameId) {
-        return "/storage/emulated/0/Android/data/com.nfc.launcher/files/roms/" + gameId + ".rom";
     }
 
     private void downloadAndInstallRetroArch(String gameId) {
