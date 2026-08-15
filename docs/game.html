@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Emulator</title>
+    <style>
+        body { margin: 0; padding: 0; background: #111; color: #fff; font-family: system-ui, sans-serif; }
+        #game-container { width: 100%; max-width: 800px; margin: 0 auto; aspect-ratio: 4/3; background: #000; }
+        .error { color: #ff5555; padding: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="error">Carregando emulador...</div>
+    </div>
+
+    <script>
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const romUrl = params.get('rom');
+            const container = document.getElementById('game-container');
+
+            if (!romUrl) {
+                container.innerHTML = '<div class="error">Parâmetro ?rom= faltando</div>';
+                return;
+            }
+
+            const system = (params.get('system') || 'gbc').toLowerCase();
+            const coreMap = {
+                'gbc': 'gb',
+                'gb': 'gb',
+                'gba': 'gba',
+                'nes': 'nes',
+                'snes': 'snes',
+                'n64': 'n64',
+                'genesis': 'segaMD',
+                'segaMD': 'segaMD',
+                'segacd': 'segaCD'
+            };
+            const core = coreMap[system] || 'gb';
+
+            container.innerHTML = '<div id="game"></div>';
+
+            const script = document.createElement('script');
+            script.src = 'https://www.retrogames.cc/bower_components/jquery/dist/jquery.js';
+            script.onload = function() {
+                const emulatorScript = document.createElement('script');
+                emulatorScript.src = 'https://www.emulatorjs.com/loader.js';
+                emulatorScript.onload = function() {
+                    if (typeof EJS_player !== 'undefined') {
+                        EJS_player = '#game';
+                        EJS_gameUrl = romUrl;
+                        EJS_core = core;
+                        EJS_onGameStart = function() {
+                            console.log('Emulador iniciado');
+                        };
+                    }
+                };
+                document.body.appendChild(emulatorScript);
+            };
+            document.body.appendChild(script);
+        })();
+    </script>
+</body>
+</html>
