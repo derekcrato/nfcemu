@@ -44,10 +44,10 @@ nfc/
 
 O launcher e quem intercepta a tag NFC e abre o jogo.
 
-- **Android**: instale o APK do launcher pela release `launchers-*` no GitHub.
-- **iOS**: instale o IPA do launcher pela release `launchers-*` no GitHub.
+- **Android**: baixe o APK pela release `launchers-*` no GitHub.
+- **iOS**: baixe o IPA pela release `launchers-*` no GitHub.
 
-Se o launcher nao estiver instalado, a URL da tag NFC abrira no navegador e dara erro 404, pois `raw.githubusercontent.com` nao e uma pagina HTML.
+Se o launcher nao estiver instalado, a URL da tag NFC vai abrir a pagina de redirecionamento, que detecta a plataforma e oferece o download correto.
 
 ### 2. Escreva as tags NFC
 
