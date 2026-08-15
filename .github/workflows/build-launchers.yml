@@ -1,0 +1,77 @@
+name: Build NFC Launchers
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'launcher-android/**'
+      - 'launcher-ios/**'
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Build Android Launcher
+        run: |
+          cd launcher-android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfc-launcher-android
+          path: launcher-android/app/build/outputs/apk/release/*.apk
+          retention-days: 90
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build iOS Launcher
+        run: |
+          cd launcher-ios
+          xcodebuild -project NFCLauncher.xcodeproj \
+            -scheme NFCLauncher \
+            -configuration Release \
+            -archivePath build/NFCLauncher.xcarchive \
+            archive
+          xcodebuild -exportArchive \
+            -archivePath build/NFCLauncher.xcarchive \
+            -exportPath build \
+            -exportOptionsPlist ExportOptions.plist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nfc-launcher-ios
+          path: launcher-ios/build/*.ipa
+          retention-days: 90
+
+  release:
+    needs: [android, ios]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: launchers-${{ github.sha }}
+          name: Launchers ${{ github.sha }}
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

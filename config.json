@@ -1,0 +1,14 @@
+{
+  "github_repo": "derekcrato/nfcemu",
+  "retroarch_base_android": "com.retroarch.aarch64",
+  "retroarch_base_ios": "com.retroarch",
+  "supported_schemes": ["gba", "gbx", "md", "ms", "nes", "snes", "ps1"],
+  "default_core": "fceumm",
+  "standalone_prefix": "com.nfc.game.",
+  "nfc_url_prefix": "https://raw.githubusercontent.com",
+  "build": {
+    "android_min_sdk": 21,
+    "android_target_sdk": 34,
+    "ios_deployment_target": "15.0"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+*.log
+*.apk
+*.ipa
+*.zip
+*.keystore
+*.jks
+.DS_Store
+Thumbs.db

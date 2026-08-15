@@ -1,0 +1,99 @@
+name: Build RetroArch Standalone Games
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'roms/**'
+      - 'scripts/**'
+      - 'packager/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        game: ${{ fromJson(needs.scan.outputs.games) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan ROMs
+        id: scan
+        run: |
+          python3 scripts/generate_nfc_links.py
+          echo "games=$(cat dist/games.json | jq -c 'keys')" >> $GITHUB_OUTPUT
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download RetroArch Core
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y zipalign apksigner
+          npm install -g apk-editor
+
+          CORES_DIR="${{ runner.temp }}/ra-cores"
+          mkdir -p "$CORES_DIR"
+
+          GAME_ID="${{ matrix.game }}"
+          SYSTEM=$(echo "$GAME_ID" | sed 's/-.*//')
+          case "$SYSTEM" in
+            gba) CORE="mgba" ;;
+            gbx) CORE="gambatte" ;;
+            md|ms) CORE="genesis_plus_gx" ;;
+            nes) CORE="fceumm" ;;
+            snes) CORE="snes9x" ;;
+            ps1) CORE="mednafen_psx" ;;
+            *) CORE="fceumm" ;;
+          esac
+
+          curl -L -o "$CORES_DIR/${CORE}_libretro_android.so.zip" \
+            "https://buildbot.libretro.com/nightly/android/latest/${CORE}_libretro_android.so.zip"
+          unzip -o "$CORES_DIR/${CORE}_libretro_android.so.zip" -d "$CORES_DIR"
+
+          echo "CORES_DIR=$CORES_DIR" >> $GITHUB_ENV
+
+      - name: Build Standalone APK
+        run: |
+          python3 packager/build_standalone.py android ${{ matrix.game }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.game }}
+          path: build/android/${{ matrix.game }}/*.apk
+          retention-days: 90
+
+  scan:
+    runs-on: ubuntu-latest
+    outputs:
+      games: ${{ steps.scan.outputs.games }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan games
+        id: scan
+        run: |
+          python3 scripts/generate_nfc_links.py
+          echo "games=$(cat dist/games.json | jq -c 'keys')" >> $GITHUB_OUTPUT
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: games-${{ github.sha }}
+          name: Games ${{ github.sha }}
+          files: artifacts/**/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
