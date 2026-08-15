@@ -8,13 +8,16 @@
     body { font-family: system-ui, sans-serif; text-align: center; padding: 20px; }
     .btn { display: inline-block; padding: 12px 24px; background: #007AFF; color: white; text-decoration: none; border-radius: 8px; margin: 10px; }
     .hidden { display: none; }
+    .error { color: #FF3B30; }
   </style>
 </head>
 <body>
   <div id="launcher-section">
     <h1>Instale o NFC Launcher</h1>
     <p>Para jogar, voce precisa instalar o NFC Launcher primeiro.</p>
-    <a class="btn" href="https://github.com/derekcrato/nfcemu/releases" id="download-btn">Baixar NFC Launcher</a>
+    <a class="btn" id="download-android" href="https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-android.apk">Baixar para Android</a>
+    <a class="btn" id="download-ios" href="https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-ios.ipa">Baixar para iOS</a>
+    <p class="error" id="platform-error"></p>
   </div>
 
   <div id="game-section" class="hidden">
@@ -28,6 +31,26 @@
       const params = new URLSearchParams(window.location.search);
       const gameId = params.get('game');
       const repo = 'derekcrato/nfcemu';
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+
+      const downloadAndroid = document.getElementById('download-android');
+      const downloadIOS = document.getElementById('download-ios');
+      const platformError = document.getElementById('platform-error');
+
+      if (isAndroid) {
+        downloadAndroid.href = 'https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-android.apk';
+        downloadAndroid.style.display = 'inline-block';
+        downloadIOS.style.display = 'none';
+      } else if (isIOS) {
+        downloadIOS.href = 'https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-ios.ipa';
+        downloadIOS.style.display = 'inline-block';
+        downloadAndroid.style.display = 'none';
+      } else {
+        downloadAndroid.href = 'https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-android.apk';
+        downloadIOS.href = 'https://github.com/derekcrato/nfcemu/releases/download/v1.0.0/nfc-launcher-ios.ipa';
+        platformError.textContent = 'Selecione seu sistema:';
+      }
 
       if (!gameId) {
         document.getElementById('launcher-section').classList.remove('hidden');
