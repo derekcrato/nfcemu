@@ -2,7 +2,7 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { execSync, spawn } = require('child_process');
+const { execSync } = require('child_process');
 
 function fetch(url) {
   return new Promise(function(resolve, reject) {
@@ -18,10 +18,7 @@ function fetch(url) {
 function extractEmbedId(content, url) {
   var patterns = [
     /embed\/(\d+)-[^"']+\.html/i,
-    /embed\/(\d+)-[^"']+/i,
-    /id="gameFrame"/i,
-    /data-game[=\s]*"(\d+)"/i,
-    /game[=\s]*"(\d+)"/i
+    /embed\/(\d+)-[^"']+/i
   ];
 
   for (var i = 0; i < patterns.length; i++) {
@@ -33,9 +30,6 @@ function extractEmbedId(content, url) {
 
   var urlMatch = url.match(/\/(\d+)-/);
   if (urlMatch) return urlMatch[1];
-
-  var pathMatch = url.match(/\/(\d+)$/);
-  if (pathMatch) return pathMatch[1];
 
   return null;
 }
@@ -82,8 +76,8 @@ function main() {
 
     console.log('🎮 Found embed ID:', gameId);
 
-    var urlPath = require('url').parse(url).pathname;
-    var gameName = urlPath.split('/').pop().replace(/\.html$/, '').replace(/-/g, ' ');
+    var urlParts = url.split('/');
+    var gameName = urlParts[urlParts.length - 1].replace(/\.html$/, '').replace(/-/g, ' ');
     console.log('📝 Game name:', gameName);
 
     console.log('🔨 Creating embed page...');
