@@ -35,7 +35,6 @@ def create_embed_page(game_id, game_name, overwrite=False):
     safe_name = re.sub(r'[^a-z0-9]+', '-', game_name.lower()).strip('-')
     safe_name = re.sub(r'-+', '-', safe_name)
     file_name = f"{safe_name}.html"
-    
     exe_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
     file_path = os.path.join(repo_root, 'docs', file_name)
@@ -80,9 +79,9 @@ def git_commit_push(files, repo_root, message):
             print('❌ Git commit error:', result_commit.stderr)
             return False
             
-        result_push = subprocess.run(['git', 'push'], cwd=repo_root, capture_output=True, text=True, env=env)
+        result_push = subprocess.run(['gh', 'repo', 'sync'], cwd=repo_root, capture_output=True, text=True, env=env)
         if result_push.returncode != 0:
-            print('❌ Git push error:', result_push.stderr)
+            print('❌ GitHub sync error:', result_push.stderr)
             return False
             
         print('✅ Committed and pushed to GitHub')
@@ -128,6 +127,44 @@ def delete_game(file_name):
         return True
     return False
 
+def create_game_from_url(url):
+    print('🔍 Fetching game page...')
+    try:
+        content = fetch(url)
+    except Exception as e:
+        print('❌ Erro ao baixar a pagina:', e)
+        return False
+
+    game_id = extract_embed_id(content, url)
+    if not game_id:
+        print('❌ Could not find embed ID in the page')
+        return False
+    print('🎮 Found embed ID:', game_id)
+
+    path_parts = url.split('/')
+    game_name = path_parts[-1].replace('.html', '').replace('-', ' ')
+    print('📝 Game name:', game_name)
+
+    file_name, file_path, repo_root = create_embed_page(game_id, game_name)
+    if file_name is None:
+        overwrite = input(f'⚠️  {file_name} already exists. Overwrite? (y/n): ').strip().lower()
+        if overwrite != 'y':
+            print('Cancelled.')
+            return False
+        file_name, file_path, repo_root = create_embed_page(game_id, game_name, overwrite=True)
+
+    print('✅ Created:', file_name)
+    print('🚀 Committing and pushing...')
+    success = git_commit_push([os.path.join('docs', file_name)], repo_root, f'feat: add {file_name}')
+    if success:
+        pages_url = f'https://derekcrato.github.io/nfcemu/{file_name}'
+        print()
+        print('=' * 50)
+        print('🎉 Done!')
+        print('📱 NFC Link:', pages_url)
+        print('=' * 50)
+    return success
+
 def main():
     repo_root = find_repo_root()
     if not repo_root:
@@ -135,6 +172,16 @@ def main():
         print('Certifique-se de que o repositório nfc está clonado em: C:\\Users\\Derek\\Desktop\\nfc')
         input('Press Enter to exit...')
         sys.exit(1)
+
+    if len(sys.argv) > 1:
+        url = sys.argv[1]
+        if not url:
+            print('❌ URL nao pode estar vazia!')
+            input('Press Enter to exit...')
+            sys.exit(1)
+        create_game_from_url(url)
+        input('Press Enter to exit...')
+        sys.exit(0)
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -158,46 +205,7 @@ def main():
                 print('❌ URL nao pode estar vazia!')
                 input('Press Enter to continue...')
                 continue
-            
-            print()
-            print('🔍 Fetching game page...')
-            try:
-                content = fetch(url)
-            except Exception as e:
-                print('❌ Erro ao baixar a pagina:', e)
-                input('Press Enter to continue...')
-                continue
-
-            game_id = extract_embed_id(content, url)
-            if not game_id:
-                print('❌ Could not find embed ID in the page')
-                input('Press Enter to continue...')
-                continue
-            print('🎮 Found embed ID:', game_id)
-
-            path_parts = url.split('/')
-            game_name = path_parts[-1].replace('.html', '').replace('-', ' ')
-            print('📝 Game name:', game_name)
-
-            file_name, file_path, repo_root = create_embed_page(game_id, game_name)
-            if file_name is None:
-                overwrite = input(f'⚠️  {file_name} already exists. Overwrite? (y/n): ').strip().lower()
-                if overwrite != 'y':
-                    print('Cancelled.')
-                    input('Press Enter to continue...')
-                    continue
-                file_name, file_path, repo_root = create_embed_page(game_id, game_name, overwrite=True)
-
-            print('✅ Created:', file_name)
-            print('🚀 Committing and pushing...')
-            success = git_commit_push([os.path.join('docs', file_name)], repo_root, f'feat: add {file_name}')
-            if success:
-                pages_url = f'https://derekcrato.github.io/nfcemu/{file_name}'
-                print()
-                print('=' * 50)
-                print('🎉 Done!')
-                print('📱 NFC Link:', pages_url)
-                print('=' * 50)
+            create_game_from_url(url)
             input('Press Enter to continue...')
 
         elif choice == '2':
