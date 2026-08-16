@@ -3,6 +3,20 @@ import re
 import os
 import sys
 import subprocess
+import json
+import webbrowser
+
+CONFIG_FILE = 'nfc_tool_config.json'
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_config(config):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(config, f, indent=2)
 
 def fetch(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -18,14 +32,17 @@ def extract_embed_id(content, url):
         return match.group(1)
     return None
 
-def create_embed_page(game_id, game_name):
+def create_embed_page(game_id, game_name, overwrite=False):
     safe_name = re.sub(r'[^a-z0-9]+', '-', game_name.lower()).strip('-')
     safe_name = re.sub(r'-+', '-', safe_name)
     file_name = f"{safe_name}.html"
     exe_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
     file_path = os.path.join(repo_root, 'docs', file_name)
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+    if os.path.exists(file_path) and not overwrite:
+        return None, file_path, repo_root
+
     html = f'''<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -42,71 +59,165 @@ def create_embed_page(game_id, game_name):
     <iframe src="https://www.retrogames.cc/embed/{game_id}-{safe_name}.html" allow="fullscreen; autoplay; gamepad; microphone" allowfullscreen></iframe>
 </body>
 </html>'''
+
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(html)
     return file_name, file_path, repo_root
 
-def git_commit_push(files, repo_root):
+def git_commit_push(files, repo_root, message):
     try:
         subprocess.run(['git', 'add'] + files, cwd=repo_root, check=True, capture_output=True)
-        subprocess.run(['git', 'commit', '-m', 'feat: add retrogames embeds'], cwd=repo_root, check=True, capture_output=True)
+        subprocess.run(['git', 'commit', '-m', message], cwd=repo_root, check=True, capture_output=True)
         subprocess.run(['git', 'push'], cwd=repo_root, check=True, capture_output=True)
         print('✅ Committed and pushed to GitHub')
+        return True
     except subprocess.CalledProcessError as e:
         print('❌ Git error:', e.stderr.decode('utf-8', errors='ignore'))
-        input('Press Enter to exit...')
-        sys.exit(1)
+        return False
+
+def list_games():
+    exe_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
+    docs_dir = os.path.join(repo_root, 'docs')
+    games = []
+    if os.path.exists(docs_dir):
+        for f in os.listdir(docs_dir):
+            if f.endswith('.html') and f != 'index.html' and f != 'game.html' and f != 'embed.html' and f != 'powerup-patch.html':
+                games.append(f)
+    return sorted(games)
+
+def delete_game(file_name):
+    exe_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
+    file_path = os.path.join(repo_root, 'docs', file_name)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return True
+    return False
 
 def main():
-    print('=' * 50)
-    print('       NFC Game Link Creator')
-    print('=' * 50)
-    print()
+    config = load_config()
+    exe_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
 
-    url = input('Cole a URL do jogo do retrogames.cc: ').strip()
-    if not url:
-        print('❌ URL nao pode estar vazia!')
-        input('Press Enter to exit...')
-        sys.exit(1)
+    while True:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print('=' * 50)
+        print('       NFC Game Link Manager')
+        print('=' * 50)
+        print()
+        print('1. Gerar novo link')
+        print('2. Listar todos os jogos')
+        print('3. Excluir jogo')
+        print('4. Sair')
+        print()
+        
+        choice = input('Escolha uma opcao: ').strip()
+        
+        if choice == '1':
+            url = input('Cole a URL do jogo do retrogames.cc: ').strip()
+            if not url:
+                print('❌ URL nao pode estar vazia!')
+                input('Press Enter to continue...')
+                continue
+            
+            print()
+            print('🔍 Fetching game page...')
+            try:
+                content = fetch(url)
+            except Exception as e:
+                print('❌ Erro ao baixar a pagina:', e)
+                input('Press Enter to continue...')
+                continue
 
-    print()
-    print('🔍 Fetching game page...')
-    try:
-        content = fetch(url)
-    except Exception as e:
-        print('❌ Erro ao baixar a pagina:', e)
-        input('Press Enter to exit...')
-        sys.exit(1)
+            game_id = extract_embed_id(content, url)
+            if not game_id:
+                print('❌ Could not find embed ID in the page')
+                input('Press Enter to continue...')
+                continue
+            print('🎮 Found embed ID:', game_id)
 
-    print('📄 Page fetched, looking for embed ID...')
+            path_parts = url.split('/')
+            game_name = path_parts[-1].replace('.html', '').replace('-', ' ')
+            print('📝 Game name:', game_name)
 
-    game_id = extract_embed_id(content, url)
-    if not game_id:
-        print('❌ Could not find embed ID in the page')
-        input('Press Enter to exit...')
-        sys.exit(1)
-    print('🎮 Found embed ID:', game_id)
+            file_name, file_path, repo_root = create_embed_page(game_id, game_name)
+            if file_name is None:
+                overwrite = input(f'⚠️  {file_name} already exists. Overwrite? (y/n): ').strip().lower()
+                if overwrite != 'y':
+                    print('Cancelled.')
+                    input('Press Enter to continue...')
+                    continue
+                file_name, file_path, repo_root = create_embed_page(game_id, game_name, overwrite=True)
 
-    path_parts = url.split('/')
-    game_name = path_parts[-1].replace('.html', '').replace('-', ' ')
-    print('📝 Game name:', game_name)
+            print('✅ Created:', file_name)
+            print('🚀 Committing and pushing...')
+            success = git_commit_push([os.path.join('docs', file_name)], repo_root, f'feat: add {file_name}')
+            if success:
+                pages_url = f'https://derekcrato.github.io/nfcemu/{file_name}'
+                print()
+                print('=' * 50)
+                print('🎉 Done!')
+                print('📱 NFC Link:', pages_url)
+                print('=' * 50)
+            input('Press Enter to continue...')
 
-    print('🔨 Creating embed page...')
-    file_name, file_path, repo_root = create_embed_page(game_id, game_name)
-    print('✅ Created:', file_name)
-    print('📁 Repo root:', repo_root)
+        elif choice == '2':
+            games = list_games()
+            if not games:
+                print('Nenhum jogo encontrado.')
+            else:
+                print()
+                print('Jogos cadastrados:')
+                print('-' * 50)
+                for i, game in enumerate(games, 1):
+                    print(f'{i}. {game}')
+                    print(f'   https://derekcrato.github.io/nfcemu/{game}')
+                    print()
+            input('Press Enter to continue...')
 
-    print('🚀 Committing and pushing...')
-    git_commit_push([os.path.join('docs', file_name)], repo_root)
+        elif choice == '3':
+            games = list_games()
+            if not games:
+                print('Nenhum jogo para excluir.')
+                input('Press Enter to continue...')
+                continue
+            print()
+            print('Jogos disponiveis para exclusao:')
+            for i, game in enumerate(games, 1):
+                print(f'{i}. {game}')
+            print()
+            idx = input('Numero do jogo para excluir (ou 0 para cancelar): ').strip()
+            try:
+                idx = int(idx)
+                if idx == 0:
+                    continue
+                if idx < 1 or idx > len(games):
+                    print('❌ Numero invalido!')
+                    input('Press Enter to continue...')
+                    continue
+                game_to_delete = games[idx - 1]
+                confirm = input(f'Tem certeza que deseja excluir {game_to_delete}? (y/n): ').strip().lower()
+                if confirm == 'y':
+                    if delete_game(game_to_delete):
+                        git_commit_push([f'docs/{game_to_delete}'], repo_root, f'remove: delete {game_to_delete}')
+                        print(f'✅ {game_to_delete} excluido!')
+                    else:
+                        print('❌ Erro ao excluir arquivo.')
+                else:
+                    print('Cancelled.')
+            except ValueError:
+                print('❌ Entrada invalida!')
+            input('Press Enter to continue...')
 
-    pages_url = f'https://derekcrato.github.io/nfcemu/{file_name}'
-    print()
-    print('=' * 50)
-    print('🎉 Done!')
-    print('📱 NFC Link:', pages_url)
-    print('=' * 50)
-    print()
-    input('Press Enter to exit...')
+        elif choice == '4':
+            print('Saindo...')
+            sys.exit(0)
+
+        else:
+            print('❌ Opcao invalida!')
+            input('Press Enter to continue...')
 
 if __name__ == '__main__':
     main()
