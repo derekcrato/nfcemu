@@ -4,7 +4,6 @@ import os
 import sys
 import subprocess
 import json
-import webbrowser
 
 CONFIG_FILE = 'nfc_tool_config.json'
 
@@ -36,6 +35,7 @@ def create_embed_page(game_id, game_name, overwrite=False):
     safe_name = re.sub(r'[^a-z0-9]+', '-', game_name.lower()).strip('-')
     safe_name = re.sub(r'-+', '-', safe_name)
     file_name = f"{safe_name}.html"
+    
     exe_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
     file_path = os.path.join(repo_root, 'docs', file_name)
@@ -67,29 +67,61 @@ def create_embed_page(game_id, game_name, overwrite=False):
 
 def git_commit_push(files, repo_root, message):
     try:
-        subprocess.run(['git', 'add'] + files, cwd=repo_root, check=True, capture_output=True)
-        subprocess.run(['git', 'commit', '-m', message], cwd=repo_root, check=True, capture_output=True)
-        subprocess.run(['git', 'push'], cwd=repo_root, check=True, capture_output=True)
+        env = os.environ.copy()
+        env['GIT_TERMINAL_PROMPT'] = '0'
+        
+        result_add = subprocess.run(['git', 'add'] + files, cwd=repo_root, capture_output=True, text=True, env=env)
+        if result_add.returncode != 0:
+            print('❌ Git add error:', result_add.stderr)
+            return False
+            
+        result_commit = subprocess.run(['git', 'commit', '-m', message], cwd=repo_root, capture_output=True, text=True, env=env)
+        if result_commit.returncode != 0:
+            print('❌ Git commit error:', result_commit.stderr)
+            return False
+            
+        result_push = subprocess.run(['git', 'push'], cwd=repo_root, capture_output=True, text=True, env=env)
+        if result_push.returncode != 0:
+            print('❌ Git push error:', result_push.stderr)
+            return False
+            
         print('✅ Committed and pushed to GitHub')
         return True
-    except subprocess.CalledProcessError as e:
-        print('❌ Git error:', e.stderr.decode('utf-8', errors='ignore'))
+    except Exception as e:
+        print('❌ Git error:', str(e))
         return False
 
-def list_games():
+def find_repo_root():
     exe_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
+    possible_paths = [
+        os.path.abspath(os.path.join(exe_dir, '..', '..')),
+        os.path.abspath(os.path.join(exe_dir, '..')),
+        exe_dir,
+        os.path.expanduser('~/Desktop/nfc'),
+        'C:\\Users\\Derek\\Desktop\\nfc',
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(os.path.join(path, '.git')):
+            return path
+    return None
+
+def list_games():
+    repo_root = find_repo_root()
+    if not repo_root:
+        return []
     docs_dir = os.path.join(repo_root, 'docs')
     games = []
     if os.path.exists(docs_dir):
         for f in os.listdir(docs_dir):
-            if f.endswith('.html') and f != 'index.html' and f != 'game.html' and f != 'embed.html' and f != 'powerup-patch.html':
+            if f.endswith('.html') and f not in ['index.html', 'game.html', 'embed.html', 'powerup-patch.html']:
                 games.append(f)
     return sorted(games)
 
 def delete_game(file_name):
-    exe_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
+    repo_root = find_repo_root()
+    if not repo_root:
+        return False
     file_path = os.path.join(repo_root, 'docs', file_name)
     if os.path.exists(file_path):
         os.remove(file_path)
@@ -97,15 +129,20 @@ def delete_game(file_name):
     return False
 
 def main():
-    config = load_config()
-    exe_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
+    repo_root = find_repo_root()
+    if not repo_root:
+        print('❌ Repositório Git não encontrado!')
+        print('Certifique-se de que o repositório nfc está clonado em: C:\\Users\\Derek\\Desktop\\nfc')
+        input('Press Enter to exit...')
+        sys.exit(1)
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         print('=' * 50)
         print('       NFC Game Link Manager')
         print('=' * 50)
+        print()
+        print(f'Repo: {repo_root}')
         print()
         print('1. Gerar novo link')
         print('2. Listar todos os jogos')
