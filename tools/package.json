@@ -1,0 +1,10 @@
+{
+  "name": "nfc-game-link-creator",
+  "version": "1.0.0",
+  "description": "NFC Game Link Creator",
+  "main": "create-game-link.js",
+  "bin": "create-game-link.js",
+  "pkg": {
+    "scripts": ["create-game-link.js"]
+  }
+}

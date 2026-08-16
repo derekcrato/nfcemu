@@ -20,7 +20,7 @@ if "%url%"=="" (
 
 echo.
 echo [1/3] Buscando informacoes do jogo...
-node tools/create-game-link.js "%url%"
+node "%~dp0create-game-link.js" "%url%"
 
 if %errorlevel% neq 0 (
     echo.

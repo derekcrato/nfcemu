@@ -1,24 +1,22 @@
-#!/usr/bin/env node
-
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
 
 function fetch(url) {
-  return new Promise((resolve, reject) => {
-    const client = url.startsWith('https') ? https : http;
-    client.get(url, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data);
+  return new Promise(function(resolve, reject) {
+    var client = url.startsWith('https') ? https : http;
+    client.get(url, function(res) {
+      var data = '';
+      res.on('data', function(chunk) { data += chunk; });
+      res.on('end', function() { resolve(data); });
     }).on('error', reject);
   });
 }
 
 function extractEmbedId(content, url) {
-  const patterns = [
+  var patterns = [
     /embed\/(\d+)-[^"']+\.html/i,
     /embed\/(\d+)-[^"']+/i,
     /id="gameFrame"/i,
@@ -26,46 +24,31 @@ function extractEmbedId(content, url) {
     /game[=\s]*"(\d+)"/i
   ];
 
-  for (const pattern of patterns) {
-    const match = content.match(pattern);
+  for (var i = 0; i < patterns.length; i++) {
+    var match = content.match(patterns[i]);
     if (match && match[1]) {
       return match[1];
     }
   }
 
-  const urlMatch = url.match(/\/(\d+)-/);
+  var urlMatch = url.match(/\/(\d+)-/);
   if (urlMatch) return urlMatch[1];
 
-  const pathMatch = url.match(/\/(\d+)$/);
+  var pathMatch = url.match(/\/(\d+)$/);
   if (pathMatch) return pathMatch[1];
 
   return null;
 }
 
 function createEmbedPage(gameId, gameName) {
-  const safeName = gameName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const fileName = `${safeName}.html`;
-  const filePath = path.join(__dirname, '..', 'docs', fileName);
+  var safeName = gameName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  var fileName = safeName + '.html';
+  var filePath = path.join(__dirname, '..', 'docs', fileName);
 
-  const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>${gameName}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; display: block; }
-    </style>
-</head>
-<body>
-    <iframe src="https://www.retrogames.cc/embed/${gameId}-${safeName}.html" allow="fullscreen; autoplay; gamepad; microphone" allowfullscreen></iframe>
-</body>
-</html>`;
+  var html = '<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\n    <title>' + gameName + '</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }\n        iframe { width: 100%; height: 100%; border: none; display: block; }\n    </style>\n</head>\n<body>\n    <iframe src="https://www.retrogames.cc/embed/' + gameId + '-' + safeName + '.html" allow="fullscreen; autoplay; gamepad; microphone" allowfullscreen></iframe>\n</body>\n</html>';
 
   fs.writeFileSync(filePath, html, 'utf8');
-  return { fileName, filePath };
+  return { fileName: fileName, filePath: filePath };
 }
 
 function gitCommitAndPush(files) {
@@ -80,43 +63,43 @@ function gitCommitAndPush(files) {
   }
 }
 
-async function main() {
-  const url = process.argv[2];
+function main() {
+  var url = process.argv[2];
   if (!url) {
-    console.error('Usage: node tools/create-game-link.js <retrogames-url>');
-    console.error('Example: node tools/create-game-link.js https://www.retrogames.cc/snes-games/powerup-patch-v1-3-0.html');
+    console.error('Usage: nfc-game-link-creator <retrogames-url>');
     process.exit(1);
   }
 
   console.log('🔍 Fetching game page...');
-  const content = await fetch(url);
-  console.log('📄 Page fetched, looking for embed ID...');
+  fetch(url).then(function(content) {
+    console.log('📄 Page fetched, looking for embed ID...');
 
-  const gameId = extractEmbedId(content, url);
-  if (!gameId) {
-    console.error('❌ Could not find embed ID in the page');
+    var gameId = extractEmbedId(content, url);
+    if (!gameId) {
+      console.error('❌ Could not find embed ID in the page');
+      process.exit(1);
+    }
+
+    console.log('🎮 Found embed ID:', gameId);
+
+    var urlPath = require('url').parse(url).pathname;
+    var gameName = urlPath.split('/').pop().replace(/\.html$/, '').replace(/-/g, ' ');
+    console.log('📝 Game name:', gameName);
+
+    console.log('🔨 Creating embed page...');
+    var result = createEmbedPage(gameId, gameName);
+    console.log('✅ Created:', result.fileName);
+
+    console.log('🚀 Committing and pushing...');
+    gitCommitAndPush([path.join('docs', result.fileName)]);
+
+    var pagesUrl = 'https://derekcrato.github.io/nfcemu/' + result.fileName;
+    console.log('\n🎉 Done!');
+    console.log('📱 NFC Link:', pagesUrl);
+  }).catch(function(err) {
+    console.error('❌ Error:', err.message);
     process.exit(1);
-  }
-
-  console.log('🎮 Found embed ID:', gameId);
-
-  const urlPath = new URL(url).pathname;
-  const gameName = urlPath.split('/').pop().replace(/\.html$/, '').replace(/-/g, ' ');
-  console.log('📝 Game name:', gameName);
-
-  console.log('🔨 Creating embed page...');
-  const { fileName, filePath } = createEmbedPage(gameId, gameName);
-  console.log('✅ Created:', fileName);
-
-  console.log('🚀 Committing and pushing...');
-  gitCommitAndPush([path.join('docs', fileName)]);
-
-  const pagesUrl = `https://derekcrato.github.io/nfcemu/${fileName}`;
-  console.log('\n🎉 Done!');
-  console.log('📱 NFC Link:', pagesUrl);
+  });
 }
 
-main().catch(err => {
-  console.error('❌ Error:', err.message);
-  process.exit(1);
-});
+main();
