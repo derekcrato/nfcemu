@@ -8,10 +8,21 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
         #game { width: 100%; height: 100%; }
+        #save-ui { position: fixed; top: 10px; right: 10px; z-index: 1000; display: flex; gap: 5px; }
+        .save-btn { background: rgba(0,0,0,0.8); color: white; border: 1px solid #333; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .save-btn:hover { background: #007AFF; }
+        #status { position: fixed; bottom: 10px; left: 10px; color: #888; font-size: 11px; z-index: 1000; }
     </style>
 </head>
 <body>
-    <div id="game">Carregando...</div>
+    <div id="game"></div>
+    
+    <div id="save-ui">
+        <button class="save-btn" id="btn-save-local">Salvar</button>
+        <button class="save-btn" id="btn-load-local">Carregar</button>
+    </div>
+    
+    <div id="status">Pronto</div>
 
     <script>
         const SAVE_KEY = 'nfc_save_crystal_gbc_v1';
@@ -34,91 +45,99 @@
             'save-state-location': 'browser',
             'save-state-slot': 1
         };
-        window.EJS_fixedSaveInterval = 5000;
+
+        function updateStatus(msg) {
+            document.getElementById('status').textContent = msg;
+        }
+
+        function getGameInstance() {
+            return window.EJS_emulator && window.EJS_emulator.gameManager;
+        }
+
+        function saveLocal() {
+            updateStatus('Salvando...');
+            try {
+                const gm = getGameInstance();
+                if (!gm) {
+                    updateStatus('Emulador não pronto');
+                    return;
+                }
+                const state = gm.getState ? gm.getState() : null;
+                if (!state) {
+                    updateStatus('Nenhum estado para salvar');
+                    return;
+                }
+                const data = {
+                    state: Array.from(new Uint8Array(state)),
+                    date: new Date().toISOString()
+                };
+                localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+                updateStatus('Salvo: ' + new Date().toLocaleString('pt-BR'));
+            } catch (e) {
+                console.error(e);
+                updateStatus('Erro: ' + e.message);
+            }
+        }
+
+        function loadLocal() {
+            updateStatus('Carregando...');
+            try {
+                const saved = localStorage.getItem(SAVE_KEY);
+                if (!saved) {
+                    updateStatus('Nenhum save encontrado');
+                    return;
+                }
+                const data = JSON.parse(saved);
+                const gm = getGameInstance();
+                if (!gm || !gm.loadState) {
+                    updateStatus('Emulador não pronto');
+                    return;
+                }
+                gm.loadState(new Uint8Array(data.state));
+                updateStatus('Carregado: ' + new Date(data.date).toLocaleString('pt-BR'));
+            } catch (e) {
+                console.error(e);
+                updateStatus('Erro: ' + e.message);
+            }
+        }
 
         window.EJS_ready = function() {
-            console.log('EVENTO READY:', window.EJS_emulator);
-            if (window.EJS_emulator && window.EJS_emulator.gameManager) {
-                console.log('GAME MANAGER:', window.EJS_emulator.gameManager);
-                console.log('GETSTATE:', window.EJS_emulator.gameManager.getState ? 'existe' : 'nao existe');
-            }
-        };
-
-        window.EJS_onSaveUpdate = function(e) {
-            console.log('EVENTO onSaveUpdate disparado:', e);
-            if (!e || !e.save) return;
-            try {
-                const data = {
-                    hash: e.hash || Date.now().toString(),
-                    save: Array.from(new Uint8Array(e.save)),
-                    screenshot: e.screenshot || null,
-                    format: e.format || 'png',
-                    date: new Date().toISOString()
-                };
-                localStorage.setItem(SAVE_KEY + '_battery', JSON.stringify(data));
-                console.log('Bateria salva via onSaveUpdate');
-            } catch (err) {
-                console.error('Erro ao salvar bateria:', err);
-            }
-        };
-
-        window.EJS_onSaveSave = function(e) {
-            console.log('EVENTO onSaveSave disparado:', e);
-            if (!e || !e.save) return;
-            try {
-                const data = {
-                    state: Array.from(new Uint8Array(e.save)),
-                    screenshot: e.screenshot || null,
-                    format: e.format || 'png',
-                    date: new Date().toISOString()
-                };
-                localStorage.setItem(SAVE_KEY + '_state', JSON.stringify(data));
-                console.log('Save state salvo via onSaveSave');
-            } catch (err) {
-                console.error('Erro ao salvar state:', err);
-            }
-        };
-
-        window.EJS_onLoadSave = function() {
-            console.log('EVENTO onLoadSave disparado');
-            const saved = localStorage.getItem(SAVE_KEY + '_state');
-            if (!saved) {
-                console.log('Nenhum save state encontrado');
-                return;
-            }
-            try {
-                const data = JSON.parse(saved);
-                console.log('Save state carregado:', data.date);
-            } catch (err) {
-                console.error('Erro ao carregar save state:', err);
-            }
-        };
-
-        window.EJS_onSaveState = function(e) {
-            console.log('EVENTO onSaveState disparado:', e);
-        };
-
-        window.EJS_onLoadState = function(e) {
-            console.log('EVENTO onLoadState disparado:', e);
+            console.log('Emulador pronto');
         };
 
         window.EJS_onGameStart = function() {
-            console.log('EVENTO onGameStart disparado');
-            
-            const batterySaved = localStorage.getItem(SAVE_KEY + '_battery');
-            if (batterySaved) {
+            console.log('Jogo iniciado');
+            const saved = localStorage.getItem(SAVE_KEY);
+            if (saved) {
                 try {
-                    const data = JSON.parse(batterySaved);
-                    console.log('Bateria anterior encontrada:', data.date);
-                } catch (err) {
-                    console.error('Erro ao ler bateria salva:', err);
+                    const data = JSON.parse(saved);
+                    console.log('Save local encontrado, carregando...');
+                    loadLocal();
+                } catch (e) {
+                    console.error('Erro ao carregar save:', e);
                 }
             }
         };
 
-        window.EJS_onExit = function() {
-            console.log('EVENTO onExit disparado');
+        window.EJS_onSaveState = function(e) {
+            console.log('Save state capturado:', e);
+            saveLocal();
         };
+
+        window.EJS_onLoadState = function(e) {
+            console.log('Load state capturado:', e);
+        };
+
+        window.EJS_onSaveSave = function(e) {
+            console.log('Save arquivo capturado:', e);
+        };
+
+        window.EJS_onLoadSave = function(e) {
+            console.log('Load arquivo capturado:', e);
+        };
+
+        document.getElementById('btn-save-local').addEventListener('click', saveLocal);
+        document.getElementById('btn-load-local').addEventListener('click', loadLocal);
     </script>
 
     <script src="./emulatorjs/data/loader.js"></script>
