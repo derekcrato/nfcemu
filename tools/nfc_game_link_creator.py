@@ -52,21 +52,36 @@ def git_commit_push(files):
         print('✅ Committed and pushed to GitHub')
     except subprocess.CalledProcessError as e:
         print('❌ Git error:', e.stderr.decode('utf-8', errors='ignore'))
+        input('Press Enter to exit...')
         sys.exit(1)
 
 def main():
-    if len(sys.argv) < 2:
-        print('Usage: nfc-game-link-creator <retrogames-url>')
+    print('=' * 50)
+    print('       NFC Game Link Creator')
+    print('=' * 50)
+    print()
+
+    url = input('Cole a URL do jogo do retrogames.cc: ').strip()
+    if not url:
+        print('❌ URL nao pode estar vazia!')
+        input('Press Enter to exit...')
         sys.exit(1)
 
-    url = sys.argv[1]
+    print()
     print('🔍 Fetching game page...')
-    content = fetch(url)
+    try:
+        content = fetch(url)
+    except Exception as e:
+        print('❌ Erro ao baixar a pagina:', e)
+        input('Press Enter to exit...')
+        sys.exit(1)
+
     print('📄 Page fetched, looking for embed ID...')
 
     game_id = extract_embed_id(content, url)
     if not game_id:
         print('❌ Could not find embed ID in the page')
+        input('Press Enter to exit...')
         sys.exit(1)
     print('🎮 Found embed ID:', game_id)
 
@@ -82,8 +97,13 @@ def main():
     git_commit_push([os.path.join('docs', file_name)])
 
     pages_url = f'https://derekcrato.github.io/nfcemu/{file_name}'
-    print('\n🎉 Done!')
+    print()
+    print('=' * 50)
+    print('🎉 Done!')
     print('📱 NFC Link:', pages_url)
+    print('=' * 50)
+    print()
+    input('Press Enter to exit...')
 
 if __name__ == '__main__':
     main()
