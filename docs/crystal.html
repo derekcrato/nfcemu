@@ -14,22 +14,88 @@
     <div id="game">Carregando...</div>
 
     <script>
+        const SAVE_KEY = 'nfc_save_crystal_gbc_v1';
+        const GAME_ID = 'pokemon-crystal-gbc';
+
+        window.EJS_player = '#game';
+        window.EJS_core = 'gambatte';
+        window.EJS_pathtodata = './emulatorjs/data/';
+        window.EJS_gameUrl = './roms/crystal-version.gbc';
+        window.EJS_biosUrl = '';
+        window.EJS_saveStateURL = '';
+        window.EJS_loadStateURL = '';
+        window.EJS_saveStateName = '';
+        window.EJS_cheats = null;
+        window.EJS_debug = false;
+        window.EJS_language = 'pt-BR';
+        window.EJS_gameID = 1;
+        window.EJS_gameName = 'Pokemon Crystal';
+        window.EJS_disableLocalStorage = false;
         window.EJS_defaultOptions = {
-            "save-state-location": "browser"
+            'save-state-location': 'browser',
+            'save-state-slot': 1
         };
 
-        EJS_player = '#game';
-        EJS_core = 'mgba';
-        EJS_pathtodata = './emulatorjs/data/';
-        EJS_gameUrl = './roms/crystal-version.gbc';
-        EJS_biosUrl = '';
-        EJS_saveStateURL = '';
-        EJS_loadStateURL = '';
-        EJS_saveStateName = '';
-        EJS_cheats = null;
-        EJS_debug = false;
-        EJS_language = 'pt-BR';
-        EJS_gameID = 'pokemon-crystal-gbc';
+        window.EJS_onSaveUpdate = function(e) {
+            if (!e || !e.save) return;
+            try {
+                const data = {
+                    hash: e.hash || Date.now().toString(),
+                    save: Array.from(new Uint8Array(e.save)),
+                    screenshot: e.screenshot || null,
+                    format: e.format || 'png',
+                    date: new Date().toISOString()
+                };
+                localStorage.setItem(SAVE_KEY + '_battery', JSON.stringify(data));
+                console.log('Bateria salva:', data.date);
+            } catch (err) {
+                console.error('Erro ao salvar bateria:', err);
+            }
+        };
+
+        window.EJS_onSaveSave = function(e) {
+            if (!e || !e.save) return;
+            try {
+                const data = {
+                    state: Array.from(new Uint8Array(e.save)),
+                    screenshot: e.screenshot || null,
+                    format: e.format || 'png',
+                    date: new Date().toISOString()
+                };
+                localStorage.setItem(SAVE_KEY + '_state', JSON.stringify(data));
+                console.log('Save state salvo:', data.date);
+            } catch (err) {
+                console.error('Erro ao salvar state:', err);
+            }
+        };
+
+        window.EJS_onLoadSave = function() {
+            const saved = localStorage.getItem(SAVE_KEY + '_state');
+            if (!saved) {
+                console.log('Nenhum save state encontrado');
+                return;
+            }
+            try {
+                const data = JSON.parse(saved);
+                console.log('Save state carregado:', data.date);
+            } catch (err) {
+                console.error('Erro ao carregar save state:', err);
+            }
+        };
+
+        window.EJS_onGameStart = function() {
+            console.log('Jogo iniciado');
+            
+            const batterySaved = localStorage.getItem(SAVE_KEY + '_battery');
+            if (batterySaved) {
+                try {
+                    const data = JSON.parse(batterySaved);
+                    console.log('Bateria anterior encontrada:', data.date);
+                } catch (err) {
+                    console.error('Erro ao ler bateria salva:', err);
+                }
+            }
+        };
     </script>
 
     <script src="./emulatorjs/data/loader.js"></script>
