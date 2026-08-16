@@ -20,8 +20,11 @@ def extract_embed_id(content, url):
 
 def create_embed_page(game_id, game_name):
     safe_name = re.sub(r'[^a-z0-9]+', '-', game_name.lower()).strip('-')
+    safe_name = re.sub(r'-+', '-', safe_name)
     file_name = f"{safe_name}.html"
-    file_path = os.path.join(os.path.dirname(__file__), '..', 'docs', file_name)
+    exe_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(exe_dir, '..', '..'))
+    file_path = os.path.join(repo_root, 'docs', file_name)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     html = f'''<!DOCTYPE html>
 <html lang="pt-BR">
@@ -41,10 +44,9 @@ def create_embed_page(game_id, game_name):
 </html>'''
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(html)
-    return file_name, file_path
+    return file_name, file_path, repo_root
 
-def git_commit_push(files):
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+def git_commit_push(files, repo_root):
     try:
         subprocess.run(['git', 'add'] + files, cwd=repo_root, check=True, capture_output=True)
         subprocess.run(['git', 'commit', '-m', 'feat: add retrogames embeds'], cwd=repo_root, check=True, capture_output=True)
@@ -90,11 +92,12 @@ def main():
     print('📝 Game name:', game_name)
 
     print('🔨 Creating embed page...')
-    file_name, file_path = create_embed_page(game_id, game_name)
+    file_name, file_path, repo_root = create_embed_page(game_id, game_name)
     print('✅ Created:', file_name)
+    print('📁 Repo root:', repo_root)
 
     print('🚀 Committing and pushing...')
-    git_commit_push([os.path.join('docs', file_name)])
+    git_commit_push([os.path.join('docs', file_name)], repo_root)
 
     pages_url = f'https://derekcrato.github.io/nfcemu/{file_name}'
     print()
