@@ -15,7 +15,6 @@
 
     <script>
         const SAVE_KEY = 'nfc_save_crystal_gbc_v1';
-        const GAME_ID = 'pokemon-crystal-gbc';
 
         window.EJS_player = '#game';
         window.EJS_core = 'gambatte';
@@ -35,6 +34,7 @@
             'save-state-location': 'browser',
             'save-state-slot': 1
         };
+        window.EJS_fixedSaveInterval = 5000;
 
         window.EJS_onSaveUpdate = function(e) {
             if (!e || !e.save) return;
@@ -47,7 +47,7 @@
                     date: new Date().toISOString()
                 };
                 localStorage.setItem(SAVE_KEY + '_battery', JSON.stringify(data));
-                console.log('Bateria salva:', data.date);
+                console.log('Bateria salva via onSaveUpdate');
             } catch (err) {
                 console.error('Erro ao salvar bateria:', err);
             }
@@ -63,7 +63,7 @@
                     date: new Date().toISOString()
                 };
                 localStorage.setItem(SAVE_KEY + '_state', JSON.stringify(data));
-                console.log('Save state salvo:', data.date);
+                console.log('Save state salvo via onSaveSave');
             } catch (err) {
                 console.error('Erro ao salvar state:', err);
             }
