@@ -8,7 +8,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
         #game { width: 100%; height: 100%; }
-        #game iframe { width: 100%; height: 100%; border: none; display: block; }
     </style>
 </head>
 <body>
@@ -20,25 +19,32 @@
         const system = (params.get('system') || 'gbc').toLowerCase();
 
         const coreMap = {
-            'gbc': 'gb',
-            'gb': 'gb',
-            'gba': 'gba',
-            'nes': 'nes',
-            'snes': 'snes',
-            'n64': 'n64',
-            'psx': 'psx',
-            'ps1': 'psx',
-            'genesis': 'segaMD',
-            'segaMD': 'segaMD',
-            'segacd': 'segaCD'
+            'gbc': 'gambatte',
+            'gb': 'gambatte',
+            'gba': 'mgba',
+            'nes': 'nestopia',
+            'snes': 'snes9x',
+            'n64': 'parallel_n64',
+            'psx': 'mednafen_psx_hw',
+            'ps1': 'mednafen_psx_hw',
+            'genesis': 'genesis_plus_gx',
+            'segaMD': 'genesis_plus_gx',
+            'segacd': 'genesis_plus_gx'
         };
 
         window.EJS_player = '#game';
-        window.EJS_core = coreMap[system] || 'gb';
-        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        window.EJS_core = coreMap[system] || 'gambatte';
+        window.EJS_pathtodata = '/emulatorjs/data/';
         window.EJS_gameUrl = rom;
+        window.EJS_biosUrl = '';
+        window.EJS_saveStateURL = '';
+        window.EJS_loadStateURL = '';
+        window.EJS_saveStateName = '';
+        window.EJS_cheats = null;
+        window.EJS_debug = false;
+        window.EJS_language = 'pt-BR';
     </script>
 
-    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+    <script src="/emulatorjs/data/loader.js"></script>
 </body>
 </html>
