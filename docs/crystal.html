@@ -36,7 +36,16 @@
         };
         window.EJS_fixedSaveInterval = 5000;
 
+        window.EJS_ready = function() {
+            console.log('EVENTO READY:', window.EJS_emulator);
+            if (window.EJS_emulator && window.EJS_emulator.gameManager) {
+                console.log('GAME MANAGER:', window.EJS_emulator.gameManager);
+                console.log('GETSTATE:', window.EJS_emulator.gameManager.getState ? 'existe' : 'nao existe');
+            }
+        };
+
         window.EJS_onSaveUpdate = function(e) {
+            console.log('EVENTO onSaveUpdate disparado:', e);
             if (!e || !e.save) return;
             try {
                 const data = {
@@ -54,6 +63,7 @@
         };
 
         window.EJS_onSaveSave = function(e) {
+            console.log('EVENTO onSaveSave disparado:', e);
             if (!e || !e.save) return;
             try {
                 const data = {
@@ -70,6 +80,7 @@
         };
 
         window.EJS_onLoadSave = function() {
+            console.log('EVENTO onLoadSave disparado');
             const saved = localStorage.getItem(SAVE_KEY + '_state');
             if (!saved) {
                 console.log('Nenhum save state encontrado');
@@ -83,8 +94,16 @@
             }
         };
 
+        window.EJS_onSaveState = function(e) {
+            console.log('EVENTO onSaveState disparado:', e);
+        };
+
+        window.EJS_onLoadState = function(e) {
+            console.log('EVENTO onLoadState disparado:', e);
+        };
+
         window.EJS_onGameStart = function() {
-            console.log('Jogo iniciado');
+            console.log('EVENTO onGameStart disparado');
             
             const batterySaved = localStorage.getItem(SAVE_KEY + '_battery');
             if (batterySaved) {
@@ -95,6 +114,10 @@
                     console.error('Erro ao ler bateria salva:', err);
                 }
             }
+        };
+
+        window.EJS_onExit = function() {
+            console.log('EVENTO onExit disparado');
         };
     </script>
 
