@@ -14,23 +14,19 @@
     <div id="game">Carregando...</div>
 
     <script>
-        const romUrl = 'https://derekcrato.github.io/nfcemu/roms/crystal-version.gbc';
-        const system = 'gbc';
-        const core = 'gb';
-
-        window.EJS_player = '#game';
-        window.EJS_core = core;
-        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-        window.EJS_gameUrl = romUrl;
-        window.EJS_biosUrl = '';
-        window.EJS_saveStateURL = '';
-        window.EJS_loadStateURL = '';
-        window.EJS_saveStateName = '';
-        window.EJS_cheats = null;
-        window.EJS_debug = false;
-        window.EJS_language = 'pt-BR';
+        EJS_player = '#game';
+        EJS_core = 'gambatte';
+        EJS_pathtodata = '/emulatorjs/data/';
+        EJS_gameUrl = '/roms/crystal-version.gbc';
+        EJS_biosUrl = '';
+        EJS_saveStateURL = '';
+        EJS_loadStateURL = '';
+        EJS_saveStateName = '';
+        EJS_cheats = null;
+        EJS_debug = false;
+        EJS_language = 'pt-BR';
     </script>
 
-    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+    <script src="/emulatorjs/data/loader.js"></script>
 </body>
 </html>
