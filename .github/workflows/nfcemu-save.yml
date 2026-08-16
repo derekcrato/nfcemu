@@ -1,0 +1,52 @@
+﻿name: NFC Emulator Save System
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "save or load"
+        required: true
+        type: choice
+        options:
+          - save
+          - load
+      userId:
+        description: "User ID"
+        required: true
+        type: string
+      gameId:
+        description: "Game ID"
+        required: true
+        type: string
+      data:
+        description: "Save data (base64)"
+        required: false
+        type: string
+jobs:
+  handle-save:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: derekcrato/nfcemu-saves
+          token: `${{ secrets.NFCEMU_SAVES_TOKEN }}
+      - name: Save Game
+        if: github.event.inputs.action == 'save'
+        run: |
+          mkdir -p `${{ github.event.inputs.gameId }}
+          echo '${{ github.event.inputs.data }}' | base64 -d > `${{ github.event.inputs.gameId }}/`${{ github.event.inputs.userId }}.json
+          git config user.name "Save Bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add .
+          git commit -m "Save `${{ github.event.inputs.gameId }} `${{ github.event.inputs.userId }} `${{ github.run_number }}" || true
+          git push
+      - name: Load Game
+        if: github.event.inputs.action == 'load'
+        run: |
+          if [ -f `${{ github.event.inputs.gameId }}/`${{ github.event.inputs.userId }}.json ]; then
+            echo "data=`cat `${{ github.event.inputs.gameId }}/`${{ github.event.inputs.userId }}.json | base64 -w 0`" >> `$GITHUB_OUTPUT
+          else
+            echo "data=" >> `$GITHUB_OUTPUT
+          fi
+      - name: Return Data
+        if: github.event.inputs.action == 'load'
+        run: echo "save_data=`${{ steps.load.outputs.data }}" >> `$GITHUB_OUTPUT
